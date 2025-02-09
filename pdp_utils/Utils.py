@@ -37,7 +37,7 @@ def load_problem(filename):
         f.close()
 
     Cargo = np.array(C, dtype=np.double)[:, 1:]
-    D = np.array(D, dtype=np.int)
+    D = np.array(D, dtype=int)
 
     TravelTime = np.zeros((num_vehicles + 1, num_nodes + 1, num_nodes + 1))
     TravelCost = np.zeros((num_vehicles + 1, num_nodes + 1, num_nodes + 1))
@@ -49,7 +49,7 @@ def load_problem(filename):
     StartingTime = np.zeros(num_vehicles)
     FirstTravelTime = np.zeros((num_vehicles, num_nodes))
     FirstTravelCost = np.zeros((num_vehicles, num_nodes))
-    A = np.array(A, dtype=np.int)
+    A = np.array(A, dtype=int)
     for i in range(num_vehicles):
         VesselCapacity[i] = A[i, 3]
         StartingTime[i] = A[i, 2]
@@ -61,13 +61,13 @@ def load_problem(filename):
     VesselCargo = np.zeros((num_vehicles, num_calls + 1))
     B = np.array(B, dtype=object)
     for i in range(num_vehicles):
-        VesselCargo[i, np.array(B[i][1:], dtype=np.int)] = 1
+        VesselCargo[i, np.array(B[i][1:], dtype=int)] = 1
     VesselCargo = VesselCargo[:, 1:]
 
     LoadingTime = np.zeros((num_vehicles + 1, num_calls + 1))
     UnloadingTime = np.zeros((num_vehicles + 1, num_calls + 1))
     PortCost = np.zeros((num_vehicles + 1, num_calls + 1))
-    E = np.array(E, dtype=np.int)
+    E = np.array(E, dtype=int)
     for i in range(num_vehicles * num_calls):
         LoadingTime[E[i, 0], E[i, 1]] = E[i, 2]
         UnloadingTime[E[i, 0], E[i, 1]] = E[i, 4]
@@ -220,3 +220,48 @@ def cost_function(Solution, problem):
 
     TotalCost = NotTransportCost + sum(RouteTravelCost) + sum(CostInPorts)
     return TotalCost
+
+
+def random_function(problem):
+    num_vehicles = problem['n_vehicles']
+    vessel_cargo = problem['VesselCargo']
+    cargo_volume = problem['Cargo'][:, 2]
+    vessel_capacity = problem['VesselCapacity']
+    
+    final_route = []
+    dummy_route = [0]
+    assigned_calls = set()
+    not_assigned_calls = set()
+        
+    for i in range(num_vehicles):
+        vehicle_route = [0]
+        calls_for_vehicle = np.where(vessel_cargo[i] == 1)[0]
+        np.random.shuffle(calls_for_vehicle)
+        
+        current_load = 0
+        
+        # PICKUP
+        for call in calls_for_vehicle:
+            if call not in assigned_calls and current_load + cargo_volume[call] <= vessel_capacity[i]:
+                vehicle_route.append(call)
+                current_load += cargo_volume[call]
+                assigned_calls.add(call)
+            else:
+                not_assigned_calls.add(call)
+       
+        # DELIVERY
+        for call in vehicle_route[1:]: 
+            if vehicle_route.count(call) == 1:
+                insert_pos = np.random.randint(vehicle_route.index(call) + 1, len(vehicle_route) + 1)
+                vehicle_route.insert(insert_pos, call)
+            
+        final_route.extend(vehicle_route)
+        
+    for call in not_assigned_calls:
+        if call not in assigned_calls:
+            dummy_route.append(call)
+    final_route.extend(dummy_route)  
+        
+    return final_route
+
+        
