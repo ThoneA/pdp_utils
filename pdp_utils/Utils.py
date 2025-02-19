@@ -280,6 +280,10 @@ def random_function(problem):
     for call in not_assigned_calls:
         if call not in assigned_calls:
             dummy_route.append(call)
+    for call in dummy_route[1:]:
+        if dummy_route.count(call) == 1:
+            insert_pos = np.random.randint(dummy_route.index(call) + 1, len(dummy_route) + 1)
+            dummy_route.insert(insert_pos, call)
     final_route.extend(dummy_route)  
         
     return final_route
