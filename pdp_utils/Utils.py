@@ -227,16 +227,23 @@ def random_function(problem):
     vessel_cargo = problem['VesselCargo']
     cargo_volume = problem['Cargo'][:, 2]
     vessel_capacity = problem['VesselCapacity']
+    # print(vessel_cargo)
     
     final_route = []
     dummy_route = [0]
     assigned_calls = set()
-    not_assigned_calls = set()
+    # not_assigned_calls = set()
+    not_assigned_calls = set(range(1, problem['n_calls'] + 1)) 
         
     for i in range(num_vehicles):
         vehicle_route = [0]
         calls_for_vehicle = np.where(vessel_cargo[i] == 1)[0]
+        # print(calls_for_vehicle)
+        calls_for_vehicle = calls_for_vehicle[calls_for_vehicle != 0]
         np.random.shuffle(calls_for_vehicle)
+        # print(calls_for_vehicle)
+        # if calls_for_vehicle.size != 0: # HER prøver jeg og fjerne den doble 0en
+        
         
         current_load = 0
         
@@ -246,6 +253,7 @@ def random_function(problem):
                 vehicle_route.append(call)
                 current_load += cargo_volume[call]
                 assigned_calls.add(call)
+                not_assigned_calls.discard(call) # HER prøver jeg og fjerne den doble 0en
             else:
                 not_assigned_calls.add(call)
        
@@ -254,7 +262,19 @@ def random_function(problem):
             if vehicle_route.count(call) == 1:
                 insert_pos = np.random.randint(vehicle_route.index(call) + 1, len(vehicle_route) + 1)
                 vehicle_route.insert(insert_pos, call)
-            
+                
+        # if final_route and final_route[-1] == 0: # HER prøver jeg og fjerne den doble 0en
+        #     final_route.extend(vehicle_route[1:])
+        # else:
+        #     final_route.extend(vehicle_route)
+        
+        
+        # if len(final_route) > 0:
+        #     if final_route[-1] != 0:  
+        #         final_route.extend(vehicle_route)
+        #     else:
+        #         final_route.extend(vehicle_route[1:])
+        
         final_route.extend(vehicle_route)
         
     for call in not_assigned_calls:
