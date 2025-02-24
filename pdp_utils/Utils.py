@@ -10,7 +10,7 @@ def load_problem(filename):
     :return: named tuple object of the problem attributes
     """
     A = []
-    B = []
+    B = [] # B inneholder hvilke calls som skal til hvilken bil
     C = []
     D = []
     E = []
@@ -227,65 +227,58 @@ def random_function(problem):
     vessel_cargo = problem['VesselCargo']
     cargo_volume = problem['Cargo'][:, 2]
     vessel_capacity = problem['VesselCapacity']
-    # print(vessel_cargo)
     
     final_route = []
-    dummy_route = [0]
+    dummy_route = []
     assigned_calls = set()
-    # not_assigned_calls = set()
-    not_assigned_calls = set(range(1, problem['n_calls'] + 1)) 
-        
+    not_assigned_calls = set()
+    
+    # INITIAL SOLUTION
+    initial_sol = [0] * num_vehicles  #Dette skal se slik ut [0,0,0,0, alle calls]
+    for i in range(problem['n_calls']):
+            initial_sol.append(i+1)
+    
     for i in range(num_vehicles):
-        vehicle_route = [0]
-        calls_for_vehicle = np.where(vessel_cargo[i] == 1)[0]
-        # print(calls_for_vehicle)
+        vehicle_route = []
+        calls_for_vehicle = np.where(vessel_cargo[i] == 1)[0] + 1 # JEg må addere med 1 for å få riktig call
         calls_for_vehicle = calls_for_vehicle[calls_for_vehicle != 0]
         np.random.shuffle(calls_for_vehicle)
-        # print(calls_for_vehicle)
-        # if calls_for_vehicle.size != 0: # HER prøver jeg og fjerne den doble 0en
-        
-        
+       
         current_load = 0
         
         # PICKUP
         for call in calls_for_vehicle:
-            if call not in assigned_calls and current_load + cargo_volume[call] <= vessel_capacity[i]:
+            if call not in assigned_calls and current_load + cargo_volume[call-1] <= vessel_capacity[i]:
                 vehicle_route.append(call)
-                current_load += cargo_volume[call]
+                current_load += cargo_volume[call-1]
                 assigned_calls.add(call)
-                not_assigned_calls.discard(call) # HER prøver jeg og fjerne den doble 0en
+                not_assigned_calls.discard(call)
             else:
                 not_assigned_calls.add(call)
        
         # DELIVERY
-        for call in vehicle_route[1:]: 
+        for call in vehicle_route: 
             if vehicle_route.count(call) == 1:
                 insert_pos = np.random.randint(vehicle_route.index(call) + 1, len(vehicle_route) + 1)
                 vehicle_route.insert(insert_pos, call)
-                
-        # if final_route and final_route[-1] == 0: # HER prøver jeg og fjerne den doble 0en
-        #     final_route.extend(vehicle_route[1:])
-        # else:
-        #     final_route.extend(vehicle_route)
+        final_route.append(vehicle_route)
+      
+    result = []
+    route_index = 0
+    
+    for item in initial_sol:
+        if item == 0 and route_index < len(final_route):
+            result.extend(final_route[route_index])
+            route_index += 1
+            result.append(item)
+        if item not in result:
+            dummy_route.append(item)
         
-        
-        # if len(final_route) > 0:
-        #     if final_route[-1] != 0:  
-        #         final_route.extend(vehicle_route)
-        #     else:
-        #         final_route.extend(vehicle_route[1:])
-        
-        final_route.extend(vehicle_route)
-        
-    for call in not_assigned_calls:
-        if call not in assigned_calls:
-            dummy_route.append(call)
-    for call in dummy_route[1:]:
+    # The DUMMY ROUTE
+    for call in dummy_route:
         if dummy_route.count(call) == 1:
             insert_pos = np.random.randint(dummy_route.index(call) + 1, len(dummy_route) + 1)
             dummy_route.insert(insert_pos, call)
-    final_route.extend(dummy_route)  
-        
-    return final_route
-
-        
+    result.extend(dummy_route)
+    
+    return result

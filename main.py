@@ -38,22 +38,29 @@ for file in files:
     average_obj = sum(objective_values) / len(objective_values)
     best_obj = min(objective_values)
     improvement = 100 * (objective_values[0] - best_obj) / objective_values[0]
+    feasiblity, c = feasibility_check(best_sol, prob)
+
     
     results[file] = {
         'Average Objective': average_obj, 
         'Best Objective': best_obj, 
         'Improvement %': improvement, 
         'Running time (s)': running_time,
-        'Best sol': best_sol
+        'Best sol': best_sol,
+        'Feasibility': c
     }
-
+    
 for file, stats in results.items():
     print(f"\nResults for {file}:")
     for key, value in stats.items():
         if isinstance(value, list):
             print(f"{key}: {value}")
-        else:
+        elif isinstance(value, (int, float)):
             print(f"{key}: {value:2f}")
+        else:
+            print(f"{key}: {value}")
+
+
 
 
 
