@@ -221,6 +221,13 @@ def cost_function(Solution, problem):
     TotalCost = NotTransportCost + sum(RouteTravelCost) + sum(CostInPorts)
     return TotalCost
 
+def initial_solution(problem):
+    num_vehicles = problem['n_vehicles']
+    sol = [0] * num_vehicles
+    for i in range(problem['n_calls']):
+        sol.append(i + 1)
+        sol.append(i + 1)
+    return sol
 
 def random_function(problem):
     num_vehicles = problem['n_vehicles']
@@ -234,9 +241,9 @@ def random_function(problem):
     not_assigned_calls = set()
     
     # INITIAL SOLUTION
-    initial_sol = [0] * num_vehicles  #Dette skal se slik ut [0,0,0,0, alle calls]
+    initial_sol = [0] * num_vehicles
     for i in range(problem['n_calls']):
-            initial_sol.append(i+1)
+        initial_sol.append(i+1)
     
     for i in range(num_vehicles):
         vehicle_route = []
@@ -282,3 +289,132 @@ def random_function(problem):
     result.extend(dummy_route)
     
     return result
+
+# this should remove one call from the initial solution (both pickup and delivery)
+# then add this call to one of the vehicles
+def n_operator(prob, sol):
+    new_sol = sol.copy()
+    call_choice = sol.copy()
+    np.random.shuffle(call_choice)
+
+
+
+    # remove one call from the intial solution
+    # JEG MÅ VITE HVILKE VEHICLE DENNE CALLEN KOMMER FRA, SLIK AT JEG UTELATER SAMME VEHICLE
+    # DETTE KAN JEG GJØRE MED Å TELLE HVOR MANGE 0 DET ER FØR CALLEN
+    call = None
+    for i in range(len(call_choice)):
+        if call_choice[i] != 0:
+            call = [call_choice[i]] * 2
+            break
+
+    # print('calls'+ str(call))
+    if not call:
+        return new_sol
+    
+    # Finds out how many zeroes there are before the initial call
+    zero_pos_counter = 0
+    for i in range(len(new_sol)): 
+        if new_sol[i] == 0:
+            zero_pos_counter += 1
+        if new_sol[i] == call[0]:
+            break
+
+       
+    #This removes all instances of the call from the list
+    old_sol = new_sol
+    new_sol = list(filter((call[0]).__ne__, new_sol)) 
+        
+    # zero_pos = []
+    # for i in range(len(new_sol)):
+    #     if new_sol[i] == 0:
+    #         zero_pos.append(i)
+    
+    # if len(zero_pos) == 0:
+    #     return new_sol
+
+    # fist count how many zeroes there are, then choose a random zero
+    zero_counter = new_sol.count(0)
+    # for i in range(len(new_sol)):
+    #     if new_sol[i] == 0:
+    #         zero_counter += 1
+    # print('Zero_counter = ' + str(zero_counter))
+    
+    # I have to be sure that I don't put the call back into the same vehicle
+    random_zero = np.random.randint(0, zero_counter + 1)
+    while random_zero == zero_pos_counter:
+        random_zero = np.random.randint(0, zero_counter + 1)
+    # print('Random_zero = ' + str(random_zero))
+   
+    # TILFELLE 1: RANDOME BLIR 0
+    if random_zero == 0:
+        next_zero_pos = None
+        for i in range(len(new_sol)):
+            if new_sol[i] == 0:
+                next_zero_pos = i
+                if next_zero_pos == 0:
+                    new_sol.insert(0, call[0])
+                    new_sol.insert(1, call[1])
+                    # print(new_sol)
+                    return new_sol
+                else:
+                    break
+        pickup_index = np.random.randint(0, next_zero_pos + 1)
+        new_sol.insert(pickup_index, call[0])
+        delivery_index = np.random.randint(pickup_index + 1, next_zero_pos + 2)
+        new_sol.insert(delivery_index, call[1])
+        # print(new_sol)
+        return new_sol
+    
+    # TILFELLE 2: VI SKAL INN ETTER FØRSTE 0 
+    zero_count = 1
+    next_zero_index = None
+    for i in range(new_sol.index(0) + 1, len(new_sol)):
+        if random_zero == zero_count:
+            for j in range(i, len(new_sol)):
+                if new_sol[j] == 0:
+                    next_zero_index = j
+                    break
+            if next_zero_index != None:
+                pickup_index = np.random.randint(i, next_zero_index + 1)
+                new_sol.insert(pickup_index, call[0])
+                delivery_index = np.random.randint(pickup_index + 1, next_zero_index + 2)
+                new_sol.insert(delivery_index, call[1])
+                break
+            else:
+                return old_sol
+            
+        elif new_sol[i] == 0:
+            zero_count += 1
+    
+ 
+    # I have to find out if the chosen vehicle can take the call
+    # for i in range(prob['n_vehicles']):
+    #     if i == random_zero: # sjekker om call kan komme til denne bilen
+    #         if prob['VesselCargo'][i][call[0]-1] == 1: # sjekker om call kan være i denne bilen
+    #             break
+    #     else:
+    #         return new_sol
+    
+ 
+    # print(new_sol)
+    return new_sol
+    # I denne burde jeg sjekke i hvilke biler valgt call kan fungere i.
+            
+
+# n_operator skal være en funksjon som skal bruke initial sol(som en input) for å velge hvilke bil pickup og delivery skal legges inn i
+# def local_search(problem, initial_sol, n_operator, cost):
+def local_search(problem, initial_sol):
+    best_sol = initial_sol
+    best_cost = cost_function(best_sol, problem)
+
+    
+    for i in range(1000):
+        new_sol = n_operator(problem, best_sol)
+        feasibility, c = feasibility_check(new_sol, problem)
+        new_cost = cost_function(new_sol, problem)
+        if feasibility and new_cost < best_cost:
+            best_sol = new_sol
+            best_cost = new_cost
+    
+    return best_sol
