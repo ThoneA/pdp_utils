@@ -297,82 +297,147 @@ def random_function(problem):
 # then add this call to one of the vehicles
 def n_operator(prob, sol):
     new_sol = sol.copy()
-    call_choice = sol.copy()
-    np.random.shuffle(call_choice)
-
-    # Here I choose which call to remove and reinsert
-    call = None
-    for i in range(len(call_choice)):
-        if call_choice[i] != 0:
-            call = [call_choice[i]] * 2
-            break
-
-    # If no call is chosen
-    if not call:
+    
+    # Pick a random non-zero call
+    possible_calls = [x for x in new_sol if x != 0]
+    if not possible_calls:
         return new_sol
     
-    # Finds out how many zeroes there are before the initial call
-    zero_pos_counter = 0
-    for i in range(len(new_sol)): 
-        if new_sol[i] == 0:
-            zero_pos_counter += 1
-        if new_sol[i] == call[0]:
+    call = np.random.choice(possible_calls)
+    
+    # Count zeroes and find which vehicle has our call
+    zero_positions = [i for i, x in enumerate(new_sol) if x == 0]
+    vehicle_ranges = []
+    
+    # Create ranges for each vehicle
+    start_idx = 0
+    for zero_pos in zero_positions:
+        vehicle_ranges.append((start_idx, zero_pos))
+        start_idx = zero_pos + 1
+    vehicle_ranges.append((start_idx, len(new_sol)))
+    
+    # Find which vehicle has our call
+    current_vehicle = -1
+    for i, (start, end) in enumerate(vehicle_ranges):
+        if call in new_sol[start:end]:
+            current_vehicle = i
             break
+    
+    # Remove the call from the solution
+    new_sol = [x for x in new_sol if x != call]
+    
+    # Recalculate cehicle ranges after removal
+    zero_positions = [i for i, x in enumerate(new_sol) if x == 0]
+    vehicle_ranges = []
+    
+    start_idx = 0
+    for zero_pos in zero_positions:
+        vehicle_ranges.append((start_idx, zero_pos))
+        start_idx = zero_pos + 1
+    vehicle_ranges.append((start_idx, len(new_sol)))
+    
+    # Choose a different vehicle
+    target_vehicle = current_vehicle
+    while target_vehicle == current_vehicle and len(vehicle_ranges) > 1:
+        target_vehicle = np.random.randint(0, len(vehicle_ranges))
+    
+    # Get target vehicle range
+    start, end = vehicle_ranges[target_vehicle]
+    
+    # Insert pickup
+    pickup_pos = np.random.randint(start, end + 1)
+    new_sol.insert(pickup_pos, call)
+    
+    # Insert delivery
+    if pickup_pos < end:
+        delivery_pos = np.random.randint(pickup_pos + 1, end + 1)
+    else:
+        delivery_pos = pickup_pos + 1
+        
+    new_sol.insert(delivery_pos, call)
+    
+    return new_sol
+    
+    
+    
+    # Find which vehicle has our call
+    
+    # call_choice = sol.copy()
+    # np.random.shuffle(call_choice)
+
+    # # Here I choose which call to remove and reinsert
+    # call = None
+    # for i in range(len(call_choice)):
+    #     if call_choice[i] != 0:
+    #         call = [call_choice[i]] * 2
+    #         break
+
+    # # If no call is chosen
+    # if not call:
+    #     return new_sol
+    
+    # # Finds out how many zeroes there are before the initial call
+    # zero_pos_counter = 0
+    # for i in range(len(new_sol)): 
+    #     if new_sol[i] == 0:
+    #         zero_pos_counter += 1
+    #     if new_sol[i] == call[0]:
+    #         break
 
        
     
-    old_sol = new_sol
-    #This removes all instances of the call from the list
-    new_sol = list(filter((call[0]).__ne__, new_sol)) 
+    # old_sol = new_sol
+    # #This removes all instances of the call from the list
+    # new_sol = list(filter((call[0]).__ne__, new_sol)) 
 
-    # fist count how many zeroes there are, then choose a random zero
-    zero_counter = new_sol.count(0)
+    # # fist count how many zeroes there are, then choose a random zero
+    # zero_counter = new_sol.count(0)
     
-    # I have to be sure that I don't put the call back into the same vehicle
-    random_zero = np.random.randint(0, zero_counter + 1)
-    while random_zero == zero_pos_counter:
-        random_zero = np.random.randint(0, zero_counter + 1)
+    # # I have to be sure that I don't put the call back into the same vehicle
+    # random_zero = np.random.randint(0, zero_counter + 1)
+    # while random_zero == zero_pos_counter:
+    #     random_zero = np.random.randint(0, zero_counter + 1)
   
-    # INSTANCE 1: RANDOM BECOMES 0
-    if random_zero == 0:
-        next_zero_pos = None
-        for i in range(len(new_sol)):
-            if new_sol[i] == 0:
-                next_zero_pos = i
-                if next_zero_pos == 0:
-                    new_sol.insert(0, call[0])
-                    new_sol.insert(1, call[1])
-                    return new_sol
-                else:
-                    break
-        pickup_index = np.random.randint(0, next_zero_pos + 1)
-        new_sol.insert(pickup_index, call[0])
-        delivery_index = np.random.randint(pickup_index + 1, next_zero_pos + 2)
-        new_sol.insert(delivery_index, call[1])
-        return new_sol
+    # # INSTANCE 1: RANDOM BECOMES 0
+    # if random_zero == 0:
+    #     next_zero_pos = None
+    #     for i in range(len(new_sol)):
+    #         if new_sol[i] == 0:
+    #             next_zero_pos = i
+    #             if next_zero_pos == 0:
+    #                 new_sol.insert(0, call[0])
+    #                 new_sol.insert(1, call[1])
+    #                 return new_sol
+    #             else:
+    #                 break
+    #     pickup_index = np.random.randint(0, next_zero_pos + 1)
+    #     new_sol.insert(pickup_index, call[0])
+    #     delivery_index = np.random.randint(pickup_index + 1, next_zero_pos + 2)
+    #     new_sol.insert(delivery_index, call[1])
+    #     return new_sol
     
-    # INSTANCE 2: REINSERT AFTER THE FIRST 0 
-    zero_count = 1
-    next_zero_index = None
-    for i in range(new_sol.index(0) + 1, len(new_sol)):
-        if random_zero == zero_count:
-            for j in range(i, len(new_sol)):
-                if new_sol[j] == 0:
-                    next_zero_index = j
-                    break
-            if next_zero_index != None:
-                pickup_index = np.random.randint(i, next_zero_index + 1)
-                new_sol.insert(pickup_index, call[0])
-                delivery_index = np.random.randint(pickup_index + 1, next_zero_index + 2)
-                new_sol.insert(delivery_index, call[1])
-                break
-            else:
-                return old_sol
+    # # INSTANCE 2: REINSERT AFTER THE FIRST 0 
+    # zero_count = 1
+    # next_zero_index = None
+    # for i in range(new_sol.index(0) + 1, len(new_sol)):
+    #     if random_zero == zero_count:
+    #         for j in range(i, len(new_sol)):
+    #             if new_sol[j] == 0:
+    #                 next_zero_index = j
+    #                 break
+    #         if next_zero_index != None:
+    #             pickup_index = np.random.randint(i, next_zero_index + 1)
+    #             new_sol.insert(pickup_index, call[0])
+    #             delivery_index = np.random.randint(pickup_index + 1, next_zero_index + 2)
+    #             new_sol.insert(delivery_index, call[1])
+    #             break
+    #         else:
+    #             return old_sol
             
-        elif new_sol[i] == 0:
-            zero_count += 1
+    #     elif new_sol[i] == 0:
+    #         zero_count += 1
     
-    return new_sol
+    # return new_sol
 
 def local_search(problem, initial_sol):
     best_sol = initial_sol
@@ -416,12 +481,12 @@ def simulated_annealing(problem, initial_sol):
             delta_w.append(delta_E)
         
     delta_avg = np.mean(delta_w)
-    # print(f"delta_avg: {delta_avg}")
+    print(f"delta_avg: {delta_avg}")
     
 
         
     T_0 = -delta_avg / math.log(0.8)
-    # print(f"T_0: {T_0}")
+    print(f"T_0: {T_0}")
     
 
     alpha = (T_f / T_0) ** (1/9900)
@@ -433,8 +498,8 @@ def simulated_annealing(problem, initial_sol):
         feasibility, _ = feasibility_check(new_sol, problem)
         delta_E = c - incumbent_cost
         
-        # if i % 1000 == 0:
-        #     print(f"Vi er her: {i}")
+        if i % 1000 == 0:
+            print(f"Vi er her: {i}")
            
         if feasibility and delta_E < 0:
             incumbent = new_sol
