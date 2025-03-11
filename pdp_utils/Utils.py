@@ -1,3 +1,5 @@
+import math
+import random
 import numpy as np
 from collections import namedtuple
 
@@ -232,6 +234,7 @@ def initial_solution(problem):
 def random_function(problem):
     num_vehicles = problem['n_vehicles']
     vessel_cargo = problem['VesselCargo']
+    print(vessel_cargo)
     cargo_volume = problem['Cargo'][:, 2]
     vessel_capacity = problem['VesselCapacity']
     
@@ -241,7 +244,7 @@ def random_function(problem):
     not_assigned_calls = set()
     
     # INITIAL SOLUTION
-    initial_sol = [0] * num_vehicles
+    initial_sol = [0] * num_vehicles #[0,0,0,1,2,3,4,5,6,7]
     for i in range(problem['n_calls']):
         initial_sol.append(i+1)
     
@@ -297,18 +300,14 @@ def n_operator(prob, sol):
     call_choice = sol.copy()
     np.random.shuffle(call_choice)
 
-
-
-    # remove one call from the intial solution
-    # JEG MÅ VITE HVILKE VEHICLE DENNE CALLEN KOMMER FRA, SLIK AT JEG UTELATER SAMME VEHICLE
-    # DETTE KAN JEG GJØRE MED Å TELLE HVOR MANGE 0 DET ER FØR CALLEN
+    # Here I choose which call to remove and reinsert
     call = None
     for i in range(len(call_choice)):
         if call_choice[i] != 0:
             call = [call_choice[i]] * 2
             break
 
-    # print('calls'+ str(call))
+    # If no call is chosen
     if not call:
         return new_sol
     
@@ -321,32 +320,20 @@ def n_operator(prob, sol):
             break
 
        
-    #This removes all instances of the call from the list
-    old_sol = new_sol
-    new_sol = list(filter((call[0]).__ne__, new_sol)) 
-        
-    # zero_pos = []
-    # for i in range(len(new_sol)):
-    #     if new_sol[i] == 0:
-    #         zero_pos.append(i)
     
-    # if len(zero_pos) == 0:
-    #     return new_sol
+    old_sol = new_sol
+    #This removes all instances of the call from the list
+    new_sol = list(filter((call[0]).__ne__, new_sol)) 
 
     # fist count how many zeroes there are, then choose a random zero
     zero_counter = new_sol.count(0)
-    # for i in range(len(new_sol)):
-    #     if new_sol[i] == 0:
-    #         zero_counter += 1
-    # print('Zero_counter = ' + str(zero_counter))
     
     # I have to be sure that I don't put the call back into the same vehicle
     random_zero = np.random.randint(0, zero_counter + 1)
     while random_zero == zero_pos_counter:
         random_zero = np.random.randint(0, zero_counter + 1)
-    # print('Random_zero = ' + str(random_zero))
-   
-    # TILFELLE 1: RANDOME BLIR 0
+  
+    # INSTANCE 1: RANDOM BECOMES 0
     if random_zero == 0:
         next_zero_pos = None
         for i in range(len(new_sol)):
@@ -355,7 +342,6 @@ def n_operator(prob, sol):
                 if next_zero_pos == 0:
                     new_sol.insert(0, call[0])
                     new_sol.insert(1, call[1])
-                    # print(new_sol)
                     return new_sol
                 else:
                     break
@@ -363,10 +349,9 @@ def n_operator(prob, sol):
         new_sol.insert(pickup_index, call[0])
         delivery_index = np.random.randint(pickup_index + 1, next_zero_pos + 2)
         new_sol.insert(delivery_index, call[1])
-        # print(new_sol)
         return new_sol
     
-    # TILFELLE 2: VI SKAL INN ETTER FØRSTE 0 
+    # INSTANCE 2: REINSERT AFTER THE FIRST 0 
     zero_count = 1
     next_zero_index = None
     for i in range(new_sol.index(0) + 1, len(new_sol)):
@@ -387,23 +372,8 @@ def n_operator(prob, sol):
         elif new_sol[i] == 0:
             zero_count += 1
     
- 
-    # I have to find out if the chosen vehicle can take the call
-    # for i in range(prob['n_vehicles']):
-    #     if i == random_zero: # sjekker om call kan komme til denne bilen
-    #         if prob['VesselCargo'][i][call[0]-1] == 1: # sjekker om call kan være i denne bilen
-    #             break
-    #     else:
-    #         return new_sol
-    
- 
-    # print(new_sol)
     return new_sol
-    # I denne burde jeg sjekke i hvilke biler valgt call kan fungere i.
-            
 
-# n_operator skal være en funksjon som skal bruke initial sol(som en input) for å velge hvilke bil pickup og delivery skal legges inn i
-# def local_search(problem, initial_sol, n_operator, cost):
 def local_search(problem, initial_sol):
     best_sol = initial_sol
     best_cost = cost_function(best_sol, problem)
@@ -418,3 +388,67 @@ def local_search(problem, initial_sol):
             best_cost = new_cost
     
     return best_sol
+
+def simulated_annealing(problem, initial_sol):
+    best_sol = initial_sol 
+    incumbent = initial_sol
+    T_f = 0.1
+    delta_w = []
+    incumbent_cost = cost_function(incumbent, problem)
+    best_cost = incumbent_cost
+    
+    for w in range(1, 100):
+        new_sol = n_operator(problem, incumbent)
+        feasibility, _ = feasibility_check(new_sol, problem)
+        c = cost_function(new_sol, problem)
+        delta_E = c - incumbent_cost
+        
+        if feasibility and delta_E < 0:
+            incumbent = new_sol
+            incumbent_cost = c
+            if incumbent_cost < best_cost:
+                best_sol = incumbent
+                best_cost = incumbent_cost
+        elif feasibility:
+            if random.random() < 0.8:
+                incumbent = new_sol
+                incumbent_cost = c
+            delta_w.append(delta_E)
+        
+    delta_avg = np.mean(delta_w)
+    # print(f"delta_avg: {delta_avg}")
+    
+
+        
+    T_0 = -delta_avg / math.log(0.8)
+    # print(f"T_0: {T_0}")
+    
+
+    alpha = (T_f / T_0) ** (1/9900)
+    T = T_0
+    
+    for i in range(1, 9900):
+        new_sol = n_operator(problem, incumbent)
+        c = cost_function(new_sol, problem)
+        feasibility, _ = feasibility_check(new_sol, problem)
+        delta_E = c - incumbent_cost
+        
+        # if i % 1000 == 0:
+        #     print(f"Vi er her: {i}")
+           
+        if feasibility and delta_E < 0:
+            incumbent = new_sol
+            incumbent_cost = c
+            if incumbent_cost < best_cost:
+                best_sol = incumbent
+                best_cost = incumbent_cost
+        elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
+            incumbent = new_sol
+            incumbent_cost = c
+        
+        T = alpha * T
+        
+    return best_sol
+        
+    
+    
