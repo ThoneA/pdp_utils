@@ -74,30 +74,42 @@ def OP1(prob, sol):
     vehicles = prob['n_vehicles']
     vehicle_ranges = zero_pos(sol)
     
-    possible_calls_to_reinsert = []
+    # possible_calls_to_reinsert = []
     chosen_vehicle_index = 0
     biggest_weight = 0
+    calls_to_reinsert = []
     
-    for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-        calls = set(new_sol[start:end])
-        calls = list(calls)
-        calls = [x - 1 for x in calls]
+    for vehicle_index, (start, end) in enumerate(vehicle_ranges):       
+        # calls = set(new_sol[start:end])
+        # calls = list(calls)
+        # calls = [x - 1 for x in calls]
+        vehicle_calls = new_sol[start:end]
+        unique_calls = set(vehicle_calls)
+        unique_calls.discard(0)
         
-        vehicle_weight = sum(prob['Cargo'][calls, 2]) 
+        if not unique_calls:
+            continue
+        
+        calls_list = list(unique_calls)
+        call_indices = [x - 1 for x in calls_list]
+        
+        vehicle_weight = sum(prob['Cargo'][call_indices, 2]) 
         
         if vehicle_weight > biggest_weight:
                 chosen_vehicle_index = vehicle_index 
                 biggest_weight = vehicle_weight
-                calls_to_reinsert = calls
-    
-    # Choosing random number of calls to remove from the possible_calls_to_reinsert
-    num_to_select = random.randint(1, len(possible_calls_to_reinsert))
-    calls_to_reinsert = random.sample(possible_calls_to_reinsert, num_to_select)
-    # Removing the calls from the new solution
-    new_sol = [x for x in new_sol if x not in calls_to_reinsert]
+                calls_to_reinsert = calls_list
                 
-    return greedy_reinsert(calls_to_reinsert, new_sol) # REMEMBER TO PICKUP AND DELIVER
+    if calls_to_reinsert:
+        # Choosing random number of calls to remove from the possible_calls_to_reinsert
+        num_to_select = random.randint(1, len(calls_to_reinsert))
+        selected_calls = random.sample(calls_to_reinsert, num_to_select)
+        # Removing the calls from the new solution
+        new_sol = [x for x in new_sol if x not in selected_calls]
+            
+        return greedy_reinsert(selected_calls, new_sol, prob)
     
+    return sol
     
     
     
