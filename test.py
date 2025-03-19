@@ -142,7 +142,7 @@ def zero_pos(sol):
     for zero in zero_pos:
         vehicle_ranges.append((start_index, zero)) 
         start_index = zero + 1
-    vehicle_ranges.append((start_index, len(sol)))
+    vehicle_ranges.append((start_index, len(sol) - 1))
     
     return vehicle_ranges
 

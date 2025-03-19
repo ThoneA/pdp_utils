@@ -4,6 +4,8 @@
 
 import random
 
+from pdp_utils.Utils import *
+
 
 # Helping method: This method returns the vehicle ranges.
 def zero_pos(sol):
@@ -15,30 +17,52 @@ def zero_pos(sol):
     for zero in zero_pos:
         vehicle_ranges.append((start_index, zero)) 
         start_index = zero + 1
-    vehicle_ranges.append((start_index, len(sol)))
+    vehicle_ranges.append((start_index, len(sol) - 1))
     
     return vehicle_ranges
 
 # Helping method: This method adds the removed calls back into the solution, in a Greedy way.
-def greedy_reinsert(calls, sol):
+def greedy_reinsert(calls, sol, prob):
     # Greedy reinsertion of calls,
     # Put the call in the best possible position in the solution.
     # The best possible position is the position that minimizes the cost.
     best_sol = sol.copy()
-    new_sol = best_sol.copy()
+    best_cost = cost_function(best_sol, prob)
+    
+    
     
     for call in calls:
-        best_cost = float('inf')
-        for i in range(len(sol)):
-            new_sol.insert(i, call) # pickup
-            
-            
-            
-            
-            
+        vehicle_ranges = zero_pos(best_sol)
+        new_sol = best_sol.copy()
+        new_cost = best_cost
         
-    return
-
+        for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+            if prob['VesselCargo'][vehicle_index][call] != 1: # If the call is not possible to insert in the vehicle
+                continue
+            
+            for p_pos in range(start, end + 1):
+                temp_sol = best_sol.copy()
+                temp_sol.insert(p_pos, call)
+                
+                new_end = end + 1 
+                
+                for d_pos in range(p_pos + 1, new_end + 1):
+                    temp_sol.insert(d_pos, call)
+                
+                feasibility, _ = feasibility_check(temp_sol, prob)
+                if feasibility:
+                    temp_cost = cost_function(temp_sol, prob)
+                    
+                    if temp_cost < new_cost:
+                        new_sol = temp_sol
+                        new_cost = temp_cost
+                        
+        best_sol = new_sol
+        best_cost = new_cost
+        
+    return best_sol
+        
+   
 # Her kan jeg endre slik at den ser etter vehicle med størst vekt
 def OP1(prob, sol):
     # Remove multiple calls, given a criteria.
