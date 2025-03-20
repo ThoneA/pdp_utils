@@ -29,12 +29,12 @@ def greedy_reinsert(calls, sol, prob):
     best_sol = sol.copy()
     best_cost = cost_function(best_sol, prob)
     
-    
-    
     for call in calls:
         vehicle_ranges = zero_pos(best_sol)
         new_sol = best_sol.copy()
         new_cost = best_cost
+        print(f'New sol: {new_sol}')
+        print(f'Vehicle ranges: {vehicle_ranges}')
         
         for vehicle_index, (start, end) in enumerate(vehicle_ranges):
             if prob['VesselCargo'][vehicle_index][call] != 1: # If the call is not possible to insert in the vehicle
@@ -91,19 +91,21 @@ def OP1(prob, sol):
             continue
         
         calls_list = list(unique_calls)
-        call_indices = [x - 1 for x in calls_list]
+        call_indices = [x - 1 for x in calls_list if x - 1 < prob['n_calls']]
         
-        vehicle_weight = sum(prob['Cargo'][call_indices, 2]) 
-        
-        if vehicle_weight > biggest_weight:
-                chosen_vehicle_index = vehicle_index 
-                biggest_weight = vehicle_weight
-                calls_to_reinsert = calls_list
-                
+        if call_indices:
+            vehicle_weight = sum(prob['Cargo'][call_indices, 2]) 
+            
+            if vehicle_weight > biggest_weight:
+                    chosen_vehicle_index = vehicle_index 
+                    biggest_weight = vehicle_weight
+                    calls_to_reinsert = calls_list
+           
     if calls_to_reinsert:
         # Choosing random number of calls to remove from the possible_calls_to_reinsert
         num_to_select = random.randint(1, len(calls_to_reinsert))
         selected_calls = random.sample(calls_to_reinsert, num_to_select)
+        print(f'Selected calls: {selected_calls}')
         # Removing the calls from the new solution
         new_sol = [x for x in new_sol if x not in selected_calls]
             

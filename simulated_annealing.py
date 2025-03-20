@@ -2,10 +2,10 @@
 import time
 from pdp_utils import *
 
-files = [ 
-          'Call_80_Vehicle_20.txt',
-          'Call_35_Vehicle_7.txt'
-         ]
+# files = [ 
+#           'Call_80_Vehicle_20.txt',
+#           'Call_35_Vehicle_7.txt'
+#          ]
 
 # files = ['Call_7_Vehicle_3.txt', 
 #           'Call_300_Vehicle_90.txt',
@@ -16,7 +16,7 @@ files = [
 #          ]
 # files = ['Call_80_Vehicle_20.txt']
 
-# files = ['Call_7_Vehicle_3.txt']
+files = ['Call_7_Vehicle_3.txt']
 
 num_runs = 10
 results = {}
