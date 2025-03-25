@@ -35,7 +35,7 @@ for file in files:
     for run in range(num_runs):
         print(f"Run {run}")
         try:
-            sol = OP3(prob, initial_sol)
+            sol = OP1(prob, initial_sol)
             cost = cost_function(sol, prob)
             feasiblity, c = feasibility_check(sol, prob)
             

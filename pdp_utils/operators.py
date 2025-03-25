@@ -89,7 +89,7 @@ def OP1(prob, sol):
         
         chosen_vehicle_index = 0
         biggest_weight = 0
-        calls_to_reinsert = []
+        calls_to_reinsert = [] 
         
         for vehicle_index, (start, end) in enumerate(vehicle_ranges):      
             vehicle_calls = new_sol[start:end]
@@ -112,7 +112,10 @@ def OP1(prob, sol):
             
         if calls_to_reinsert:
             # Choosing random number of calls to remove from the possible_calls_to_reinsert
-            num_to_select = random.randint(1, len(calls_to_reinsert))
+            if len(calls_to_reinsert) < 20:
+                num_to_select = random.randint(2, len(calls_to_reinsert))
+            else:
+                num_to_select = random.randint(2, 20)
             selected_calls = random.sample(calls_to_reinsert, num_to_select)
             # print(f'Selected calls: {selected_calls}')
             # Removing the calls from the new solution
@@ -124,17 +127,17 @@ def OP1(prob, sol):
     
     
     
-
+# Remove multiple calls, given a criteria.
+# Criteria: Plukk fra flere biler samtidig
 def OP2():
-    # Remove multiple calls, given a criteria.
-    # Criteria: the car that is the fullest. Altså: has the smallest remaining capacity.
+    
     
     return
     
-
+# Remove multiple calls, given a criteria. 
+# Criteria: Randomly choose a car and remove a random number of calls from that car.
 def OP3(prob, sol):
-    # Remove multiple calls, given a criteria. 
-    # Criterie: Randomly choose a car and remove a random number of calls from that car.
+   
     new_sol = sol.copy()
     for i in range(100):
         vehicles = prob['n_vehicles']
@@ -158,7 +161,10 @@ def OP3(prob, sol):
             continue
         
         calls_list = list(unique_calls)
-        calls_n = random.randint(1, len(calls_list))
+        if calls_list < 20:
+            calls_n = random.randint(2, len(calls_list))
+        else: 
+            calls_n = random.randint(2, 20)
         
         while calls_n > 0:
             call = random.choice(calls_list)
