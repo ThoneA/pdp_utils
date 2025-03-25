@@ -7,17 +7,17 @@ from pdp_utils.operators import *
 #           'Call_35_Vehicle_7.txt'
 #          ]
 
-files = [
+# files = [
     # 'Call_7_Vehicle_3.txt', 
         #   'Call_300_Vehicle_90.txt',
         #   'Call_130_Vehicle_40.txt',
-          'Call_80_Vehicle_20.txt',
-          'Call_35_Vehicle_7.txt',
-          'Call_18_Vehicle_5.txt'
-         ]
+        #   'Call_80_Vehicle_20.txt',
+        #   'Call_35_Vehicle_7.txt',
+        #   'Call_18_Vehicle_5.txt'
+        #  ]
 # files = ['Call_80_Vehicle_20.txt']
 
-# files = ['Call_7_Vehicle_3.txt']
+files = ['Call_7_Vehicle_3.txt']
 
 num_runs = 10
 results = {}
@@ -35,7 +35,7 @@ for file in files:
     for run in range(num_runs):
         print(f"Run {run}")
         try:
-            sol = OP1(prob, initial_sol)
+            sol = OP3(prob, initial_sol)
             cost = cost_function(sol, prob)
             feasiblity, c = feasibility_check(sol, prob)
             
@@ -79,17 +79,6 @@ for file in files:
             'Running time (s)': running_time
         }
     
-    
-    # # Print results for this file immediately
-    # print(f"\nResults for {file}:")
-    # for key, value in results[file].items():
-    #     if key != 'Best sol':  # Skip printing the full solution
-    #         if isinstance(value, (int, float)):
-    #             print(f"{key}: {value:.2f}")
-    #         else:
-    #             print(f"{key}: {value}")
-
-# Print results only once per file at the end
 for file, stats in results.items():
     print(f"\nResults for {file}:")
     for key, value in stats.items():
@@ -99,14 +88,4 @@ for file, stats in results.items():
             print(f"{key}: {value:.2f}")
         else:
             print(f"{key}: {value}")
-            
-# for file, stats in results.items():
-#     print(f"\nResults for {file}:")
-#     for key, value in stats.items():
-#         if isinstance(value, list):
-#             print(f"{key}: {value}")
-#         elif isinstance(value, (int, float)):
-#             print(f"{key}: {value:2f}")
-#         else:
-#             print(f"{key}: {value}")
             
