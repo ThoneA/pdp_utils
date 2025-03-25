@@ -262,3 +262,49 @@ def OP2():
     return
     
     
+    
+def OP1(prob, sol):
+    new_sol = sol.copy()
+    for i in range(100):
+        vehicles = prob['n_vehicles']
+        vehicle_ranges = zero_pos(sol)
+        
+        chosen_vehicle_index = 0
+        biggest_weight = 0
+        calls_to_reinsert = [] 
+        
+        for vehicle_index, (start, end) in enumerate(vehicle_ranges):      
+            vehicle_calls = new_sol[start:end]
+            unique_calls = set(vehicle_calls)
+            unique_calls.discard(0)
+            
+            if not unique_calls:
+                continue
+            
+            # Use NumPy for more efficient indexing and calculations
+            calls_list = list(unique_calls)
+            call_indices = np.array([x - 1 for x in calls_list if x - 1 < prob['n_calls']])
+            
+            if len(call_indices) > 0:
+                # Use NumPy sum for calculating vehicle weight
+                vehicle_weight = np.sum(prob['Cargo'][call_indices, 2])
+                
+                if vehicle_weight > biggest_weight:
+                    chosen_vehicle_index = vehicle_index 
+                    biggest_weight = vehicle_weight
+                    calls_to_reinsert = calls_list
+        
+        if calls_to_reinsert:
+            if len(calls_to_reinsert) < 20:
+                num_to_select = np.random.randint(2, len(calls_to_reinsert) + 1)
+            else:
+                num_to_select = np.random.randint(2, 21)
+            
+            selected_calls = np.random.choice(calls_to_reinsert, num_to_select, replace=False)
+            
+            # Remove selected calls
+            new_sol = [x for x in new_sol if x not in selected_calls]
+            
+            new_sol = greedy_reinsert(selected_calls, prob, new_sol)
+                
+    return new_sol
