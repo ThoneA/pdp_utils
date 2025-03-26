@@ -58,6 +58,50 @@ def greedy_reinsert(calls, prob, removed_sol):
         
     return best_sol
 
+
+def soft_greedy_reinsert(calls, prob, removed_sol, temperature=1.0):
+    best_sol = removed_sol[:]
+    
+    for call in calls:
+        vehicle_ranges = zero_pos(removed_sol)
+        new_best_sol = None
+        new_best_cost = float('inf')
+
+        for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+            if vehicle_index == prob['n_vehicles']:
+                continue
+            if prob['VesselCargo'][vehicle_index][call - 1] == 0:
+                continue
+            
+            # Only check a subset of positions instead of all
+            pickup_positions = range(start, end + 1)
+            delivery_positions = range(start + 1, end + 2)
+            
+            for p_pos in pickup_positions:
+                temp_p_sol = best_sol[:]
+                temp_p_sol.insert(p_pos, call)
+                
+                for d_pos in delivery_positions:
+                    temp_d_sol = temp_p_sol[:]
+                    temp_d_sol.insert(d_pos, call)
+                    
+                    if not feasibility_check(temp_d_sol, prob)[0]:
+                        continue
+                    
+                    temp_cost = cost_function(temp_d_sol, prob)
+                    
+                    if temp_cost < new_best_cost or random.uniform(0, 1) < np.exp(-(temp_cost - new_best_cost) / temperature):
+                        new_best_sol = temp_d_sol
+                        new_best_cost = temp_cost
+            
+        if new_best_sol is None:
+            best_sol.append(call)
+            best_sol.append(call)
+        else:
+            best_sol = new_best_sol
+
+    return best_sol
+
 """
 This operator chooses the vehicle with the biggest weight, and then chooses
 a random number of calls between two and twenty of the calls inside that vehicle. 
@@ -104,6 +148,162 @@ def OP1(prob, sol):
                 
     return new_sol
 
+"""
+This operation randomly chooses between 2 and 10 calls depending on the size of the file.
+Then inserst the calls back into the solution by using a soft greedy function.
+"""
+def OP2(prob, sol):
+    new_sol = sol.copy()
+    calls = prob['n_calls']
+    for i in range(100):
+        calls_to_reinsert = []
+
+        # Choose a random number between 2 and 20
+        if calls < 10:
+            calls_n = np.random.randint(2, calls)
+        else:
+            calls_n = np.random.randint(2, 10)
+        
+        calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
+    
+        # Remove selected calls
+        new_sol = [x for x in new_sol if x not in calls_to_reinsert]
+        
+        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+        
+    return new_sol
+
+
+
+"""
+This operator chooses randomly a car that contains calls,
+then it randomly chooses calls between 2 and 10.
+"""
+def OP3(prob, sol):
+    new_sol = sol.copy()
+    for i in range(100):
+        vehicles = prob['n_vehicles']
+        vehicle_ranges = zero_pos(sol)
+        
+        chosen_vehicle_index = np.random.randint(0, vehicles + 1)
+
+        while vehicle_ranges[chosen_vehicle_index][0] == vehicle_ranges[chosen_vehicle_index][1]:
+            chosen_vehicle_index = np.random.randint(0, vehicles + 1)
+       
+        start, end = vehicle_ranges[chosen_vehicle_index]
+        
+        # Choose unique calls from the vehicle
+        vehicle_calls = new_sol[start:end]
+        unique_calls = set(vehicle_calls)
+        unique_calls.discard(0)
+        
+        if not unique_calls:
+            continue
+        
+        calls_list = list(unique_calls)
+        
+        # Generating a random number of calls to remove
+        if len(calls_list) < 10:
+            calls_n = np.random.randint(2, len(calls_list) + 1)
+        else: 
+            calls_n = np.random.randint(2, 10)
+        
+        calls_to_reinsert = []
+        while calls_n > 0:
+            call = np.random.choice(calls_list)
+            calls_list.remove(call)
+            calls_n -= 1
+            new_sol.remove(call)
+            new_sol.remove(call)
+            calls_to_reinsert.append(call)
+        
+        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+        
+    return new_sol
+
+def upgraded_simulated_annealing(prob, initial_sol):
+    """
+    Implements the Simulated Annealing algorithm for solving the Pickup and Delivery Problem.
+    
+    Parameters:
+    prob (dict): Problem instance containing problem parameters
+    initial_sol (list): Initial solution
+    
+    Returns:
+    list: Best solution found
+    """
+    # Initialize parameters
+    best_sol = initial_sol.copy()
+    incumbent = initial_sol.copy()
+    T_f = 0.1  # Final temperature
+    
+    # Initial cost calculations
+    incumbent_cost = cost_function(incumbent, prob)
+    best_cost = incumbent_cost
+    
+    # Tracking temperature and cost changes
+    delta_w = []
+    
+    # First phase: Exploration and delta_w calculation
+    for w in range(1, 101):  # Increased range for more thorough exploration
+        new_sol = n_operator(prob, incumbent)
+        feasibility, _ = feasibility_check(new_sol, prob)
+        new_cost = cost_function(new_sol, prob)
+        delta_E = new_cost - incumbent_cost
+        
+        if feasibility:
+            if delta_E < 0:  # Always accept improvements
+                incumbent = new_sol
+                incumbent_cost = new_cost
+                
+                if incumbent_cost < best_cost:
+                    best_sol = incumbent
+                    best_cost = incumbent_cost
+            else:
+                # Probabilistic acceptance of worse solutions
+                if random.random() < 0.8:
+                    incumbent = new_sol
+                    incumbent_cost = new_cost
+                
+                delta_w.append(delta_E)
+    
+    # Calculate initial temperature
+    delta_avg = np.mean(delta_w) if delta_w else 1
+    T_0 = -delta_avg / math.log(0.8)
+    
+    # Compute cooling rate
+    alpha = (T_f / T_0) ** (1/9900)
+    T = T_0
+    
+    # Main simulated annealing loop
+    for i in range(1, 9901):
+        new_sol = n_operator(prob, incumbent)
+        feasibility, _ = feasibility_check(new_sol, prob)
+        new_cost = cost_function(new_sol, prob)
+        delta_E = new_cost - incumbent_cost
+        
+        if feasibility:
+            if delta_E < 0:  # Always accept improvements
+                incumbent = new_sol
+                incumbent_cost = new_cost
+                
+                if incumbent_cost < best_cost:
+                    best_sol = incumbent
+                    best_cost = incumbent_cost
+            else:
+                # Probabilistic acceptance based on temperature
+                acceptance_prob = math.exp(-delta_E / T)
+                if random.random() < acceptance_prob:
+                    incumbent = new_sol
+                    incumbent_cost = new_cost
+        
+        # Cooling schedule
+        T = alpha * T
+    
+    return best_sol
+    
+
+
 # Criteria: 
 # Let the operator pick calls from different vehicles at the same time
 # Hva om jeg velger et random stort antall calls også derifra finner 'cost of not transporting' også velger jeg de med høyest verdi.
@@ -113,9 +313,9 @@ then it sortes the calls depending on their 'cost of not transporting',
 then with a random number between 1 and 20, the operator chooses how many of the calls
 will be choosen to reinsert. 
 """
-def OP2(prob, sol):
+def idiot_OP4(prob, sol):
     new_sol = sol.copy()
-    for i in range(10):
+    for i in range(1000):
         calls_to_reinsert = []
         calls = prob['n_calls']
         calls_counter = calls        
@@ -149,7 +349,7 @@ def OP2(prob, sol):
             calls_to_reinsert = [item[0] for item in sorted_calls[:num_to_select]]
             new_sol = [x for x in new_sol if x not in calls_to_reinsert]
             
-            new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
+            new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
             feasible, _ = feasibility_check(new_sol, prob)
             
             if feasible:
@@ -157,53 +357,19 @@ def OP2(prob, sol):
         
     return sol
 
+
+
 """
 This operator chooses randomly a car that contains calls,
-then it randomly chooses calls between 2 and 20.
+then swaps the positions of the calls
 """
-def OP3(prob, sol):
+def not_OP2(prob, sol):
     new_sol = sol.copy()
-    for i in range(100):
-        vehicles = prob['n_vehicles']
-        vehicle_ranges = zero_pos(sol)
-        
-        chosen_vehicle_index = np.random.randint(0, vehicles + 1)
-
-        while vehicle_ranges[chosen_vehicle_index][0] == vehicle_ranges[chosen_vehicle_index][1]:
-            chosen_vehicle_index = np.random.randint(0, vehicles + 1)
-       
-        start, end = vehicle_ranges[chosen_vehicle_index]
-        
-        # Choose unique calls from the vehicle
-        vehicle_calls = new_sol[start:end]
-        unique_calls = set(vehicle_calls)
-        unique_calls.discard(0)
-        
-        if not unique_calls:
-            continue
-        
-        calls_list = list(unique_calls)
-        
-        # Generating a random number of calls to remove
-        if len(calls_list) < 20:
-            calls_n = np.random.randint(2, len(calls_list) + 1)
-        else: 
-            calls_n = np.random.randint(2, 21)
-        
-        calls_to_reinsert = []
-        while calls_n > 0:
-            call = np.random.choice(calls_list)
-            calls_list.remove(call)
-            calls_n -= 1
-            new_sol.remove(call)
-            new_sol.remove(call)
-            calls_to_reinsert.append(call)
-        
-        new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
-        
-    return new_sol
-
-def upgraded_simulated_annealing(prob, sol):
-    T_f = 0.1
+    vehicles = prob['n_vehicles']
+    vehicle_ranges = zero_pos(sol)
+    
+    chosen_vehicle_index = np.random.randint(0, vehicles + 1)
     
     
+    
+    return
