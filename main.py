@@ -1,23 +1,24 @@
 import time
 from pdp_utils import *
 from pdp_utils.operators import *
+import traceback
 
 # files = [ 
 #           'Call_80_Vehicle_20.txt',
 #           'Call_35_Vehicle_7.txt'
 #          ]
 
-# files = [
-#     'Call_7_Vehicle_3.txt', 
-#           'Call_300_Vehicle_90.txt',
-#           'Call_130_Vehicle_40.txt',
-#           'Call_80_Vehicle_20.txt',
-#           'Call_35_Vehicle_7.txt',
-#           'Call_18_Vehicle_5.txt'
-#          ]
+files = [
+    # 'Call_7_Vehicle_3.txt', 
+          'Call_300_Vehicle_90.txt',
+        #   'Call_130_Vehicle_40.txt',
+        #   'Call_80_Vehicle_20.txt',
+        #   'Call_35_Vehicle_7.txt',
+        #   'Call_18_Vehicle_5.txt'
+        ]
 # files = ['Call_80_Vehicle_20.txt']
 
-files = ['Call_7_Vehicle_3.txt']
+# files = ['Call_7_Vehicle_3.txt']
 
 num_runs = 10
 results = {}
@@ -48,6 +49,7 @@ for file in files:
             else:
                 print("Infeasible solution")
         except Exception as e:
+            # traceback.print_exc() 
             print(f"Error: {e}")
     
         
