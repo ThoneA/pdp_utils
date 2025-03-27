@@ -226,8 +226,8 @@ def upgraded_simulated_annealing(prob, initial_sol):
     list: Best solution found
     """
     # Initialize parameters
-    best_sol = initial_sol.copy()
-    incumbent = initial_sol.copy()
+    best_sol = initial_sol
+    incumbent = initial_sol
     T_f = 0.1  # Final temperature
     
     # probabilities for operators
@@ -244,7 +244,7 @@ def upgraded_simulated_annealing(prob, initial_sol):
     delta_w = []
     
     # First phase: Exploration and delta_w calculation
-    for w in range(1, 101):  # Increased range for more thorough exploration
+    for w in range(1, 100):  # Increased range for more thorough exploration
         chosen_operator = random.choices(operators, weights=probabilities, k=1)[0]
         if chosen_operator == 'P1':
             new_sol = OP1(prob, incumbent)
@@ -254,24 +254,22 @@ def upgraded_simulated_annealing(prob, initial_sol):
             new_sol = OP3(prob, incumbent)
             
         feasibility, _ = feasibility_check(new_sol, prob)
+        new_cost = cost_function(new_sol, prob)
+        delta_E = new_cost - incumbent_cost
         
-        if feasibility:
-            new_cost = cost_function(new_sol, prob)
-            delta_E = new_cost - incumbent_cost
-            if delta_E < 0:  # Always accept improvements
+        if feasibility and delta_E < 0:
+            incumbent = new_sol
+            incumbent_cost = new_cost
+            
+            if incumbent_cost < best_cost:
+                best_sol = incumbent
+                best_cost = incumbent_cost
+        else:
+            # Probabilistic acceptance of worse solutions
+            if random.random() < 0.8:
                 incumbent = new_sol
                 incumbent_cost = new_cost
-                
-                if incumbent_cost < best_cost:
-                    best_sol = incumbent
-                    best_cost = incumbent_cost
-            else:
-                # Probabilistic acceptance of worse solutions
-                if random.random() < 0.8:
-                    incumbent = new_sol
-                    incumbent_cost = new_cost
-                
-                delta_w.append(delta_E)
+            delta_w.append(delta_E)
     
     # Calculate initial temperature
     delta_avg = np.mean(delta_w) 
@@ -282,7 +280,7 @@ def upgraded_simulated_annealing(prob, initial_sol):
     T = T_0
     
     # Main simulated annealing loop
-    for i in range(1, 9901):
+    for i in range(1, 9900):
         chosen_operator = random.choices(operators, weights=probabilities, k=1)[0]
         if chosen_operator == 'P1':
             new_sol = OP1(prob, incumbent)
@@ -292,23 +290,19 @@ def upgraded_simulated_annealing(prob, initial_sol):
             new_sol = OP3(prob, incumbent)
             
         feasibility, _ = feasibility_check(new_sol, prob)
+        new_cost = cost_function(new_sol, prob)
+        delta_E = new_cost - incumbent_cost
        
-        if feasibility:
-            new_cost = cost_function(new_sol, prob)
-            delta_E = new_cost - incumbent_cost
-            if delta_E < 0:  # Always accept improvements
-                incumbent = new_sol
-                incumbent_cost = new_cost
-                
-                if incumbent_cost < best_cost:
-                    best_sol = incumbent
-                    best_cost = incumbent_cost
-            else:
-                # Probabilistic acceptance based on temperature
-                acceptance_prob = math.exp(-delta_E / T)
-                if random.random() < acceptance_prob:
-                    incumbent = new_sol
-                    incumbent_cost = new_cost
+        if feasibility and delta_E < 0:
+            incumbent = new_sol
+            incumbent_cost = new_cost
+            
+            if incumbent_cost < best_cost:
+                best_sol = incumbent
+                best_cost = incumbent_cost
+        elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
+            incumbent = new_sol
+            incumbent_cost = new_cost
         
         # Cooling schedule
         T = alpha * T
