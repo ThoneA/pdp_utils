@@ -17,6 +17,27 @@ def zero_pos(sol):
     
     return vehicle_ranges
 
+def easy_reinsert(calls, prob, removed_sol):
+    vehicles_n = prob['n_vehicles']
+    vehicle_ranges = zero_pos(removed_sol)
+    vehicle_to_select = np.random.randint(0, vehicles_n)
+    i_vehicle = vehicle_ranges[vehicle_to_select][0]
+    
+    new_sol = removed_sol
+    i_pos = 0
+  
+    
+    for call in calls:
+        new_sol.insert(i_vehicle + i_pos, call)
+        i_pos += 1
+        new_sol.insert(i_vehicle + i_pos, call)
+        i_pos += 1
+ 
+    return new_sol
+    
+    
+    
+
 def greedy_reinsert(calls, prob, removed_sol): # KANSKJE KUNN SJEKKE HALVPARTEN AV BILENE VELG DEM RANDOM
     best_sol = removed_sol.copy()
     
@@ -143,7 +164,8 @@ def OP1(prob, sol): # Change this operator such that it doesnt calculate all the
         # Remove selected calls
         new_sol = [x for x in new_sol if x not in selected_calls]
         
-        new_sol = soft_greedy_reinsert(selected_calls, prob, new_sol)
+        # new_sol = soft_greedy_reinsert(selected_calls, prob, new_sol)
+        new_sol = easy_reinsert(selected_calls, prob, new_sol)
                 
     return new_sol
 
@@ -167,7 +189,8 @@ def OP2(prob, sol):
     # Remove selected calls
     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
     
-    new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    # new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
     
     return new_sol
 
@@ -213,21 +236,12 @@ def OP3(prob, sol):
         new_sol.remove(call)
         calls_to_reinsert.append(call)
     
-    new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    # new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
     
     return new_sol
 
-def upgraded_simulated_annealing(prob, initial_sol):
-    """
-    Implements the Simulated Annealing algorithm for solving the Pickup and Delivery Problem.
-    
-    Parameters:
-    prob (dict): Problem instance containing problem parameters
-    initial_sol (list): Initial solution
-    
-    Returns:
-    list: Best solution found
-    """
+def equal_simulated_annealing(prob, initial_sol):
     # Initialize parameters
     best_sol = initial_sol.copy()
     incumbent = initial_sol.copy()
@@ -248,30 +262,19 @@ def upgraded_simulated_annealing(prob, initial_sol):
     
     # First phase: Exploration and delta_w calculation
     for w in range(1, 100):  # Increased range for more thorough exploration
-        # new_sol = OP1(prob, incumbent)
         chosen_operator = random.choices(operators, weights=probabilities, k=1)[0]
-        # chosen_operator = "P3"
         if chosen_operator == 'P1':
             new_sol = OP1(prob, incumbent)
-            # print('choosen P1!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         elif chosen_operator == 'P2':
             new_sol = OP2(prob, incumbent)
-            # print('choosen P2!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         elif chosen_operator == 'P3':
-            new_sol = OP3(prob, incumbent)
-            # print('choosen P3!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            
+            new_sol = OP3(prob, incumbent)            
             
         feasibility, c = feasibility_check(new_sol, prob)
         new_cost = cost_function(new_sol, prob)
         delta_E = new_cost - incumbent_cost
-        # print(f'delta_E 1: {delta_E}')
-        # print(f'feasibility = {feasibility}, and cause = {c}')
-        # print(f'new sol = {new_sol}')
-        # DELTA_E ER FEILEN!!!!!!!!!!!
         
         if feasibility and delta_E < 0:
-            # print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11')
             incumbent = new_sol
             incumbent_cost = new_cost
             
@@ -290,32 +293,24 @@ def upgraded_simulated_annealing(prob, initial_sol):
     T_0 = -delta_avg / math.log(0.8)
     
     # Compute cooling rate
-    # print(f'T_f: {T_f}, T_0: {T_0}')
     alpha = (T_f / T_0) ** (1/9900) 
-    # print(f'alpha: {alpha}')
     T = T_0
     
     # Main simulated annealing loop
     for i in range(1, 9900):
-        # if i == 1:
-        #     print('Den kjører??????????????????????????????????????????????????????????????????????????????????????????????????????')
         if i % 1000 == 0:
             print(f"Vi er her: {i}")
-        # new_sol = OP1(prob, incumbent)
         chosen_operator = random.choices(operators, weights=probabilities, k=1)[0]
-        # chosen_operator = "P3"
         if chosen_operator == 'P1':
             new_sol = OP1(prob, incumbent)
         elif chosen_operator == 'P2':
             new_sol = OP2(prob, incumbent)
         elif chosen_operator == 'P3':
             new_sol = OP3(prob, incumbent)
-            
-        # print("ay")
+
         feasibility, _ = feasibility_check(new_sol, prob)
         new_cost = cost_function(new_sol, prob)
         delta_E = new_cost - incumbent_cost
-        # print(f'delta_E 2: {delta_E}')
        
         if feasibility and delta_E < 0:
             incumbent = new_sol

@@ -309,4 +309,27 @@
                 
 #     return new_sol
 
-print(int(5/2))
+sol = [1,1]
+
+calls = [4,5,6]
+vehicle = [[1,1], [2,2]]
+
+index_pos = 0
+chosen_vehicle = 1
+
+for call in calls:
+    vehicle[chosen_vehicle].insert(index_pos, call)
+    index_pos += 1
+    vehicle[chosen_vehicle].insert(index_pos, call)
+    index_pos += 1
+
+
+# sol.insert(0, calls)
+
+print(vehicle)
+
+vehicle_ranges = ((0,0), (1,1), (2,2), (3, 5))
+random_vehicle_i = 1
+
+print(vehicle_ranges[1][0])
+
