@@ -2,14 +2,16 @@ import random
 import numpy as np
 from pdp_utils.Utils import *
 
+
+"""
+This function returns the vehicle ranges 
+"""
 def zero_pos(sol):
-    # Convert to NumPy for more efficient processing
     sol_array = np.array(sol)
     zero_indices = np.where(sol_array == 0)[0]
     vehicle_ranges = []
     start_index = 0  
     
-    # Defines vehicle ranges in the solution
     for zero in zero_indices:
         vehicle_ranges.append((start_index, zero)) 
         start_index = zero + 1
@@ -17,6 +19,9 @@ def zero_pos(sol):
     
     return vehicle_ranges
 
+"""
+This insertion function inserts all the calls into a random vehicle
+"""
 def easy_reinsert(calls, prob, removed_sol):
     vehicles_n = prob['n_vehicles']
     vehicle_ranges = zero_pos(removed_sol)
@@ -25,19 +30,46 @@ def easy_reinsert(calls, prob, removed_sol):
     
     new_sol = removed_sol
     i_pos = 0
-  
-    
+      
+    for call in calls:
+        new_sol.insert(i_vehicle + i_pos, call)
+        i_pos += 1
+        new_sol.insert(i_vehicle + i_pos, call)
+        i_pos += 1 
+ 
+    return new_sol
+ 
+"""
+This insertion function inserts all the calls into a random vehicle, then shuffles the calls in that vehicle
+"""   
+def easy_shuffle_reinsert(calls, prob, removed_sol):
+    vehicles_n = prob['n_vehicles']
+    vehicle_ranges = zero_pos(removed_sol)
+    vehicle_to_select = np.random.randint(0, vehicles_n)
+    i_vehicle = vehicle_ranges[vehicle_to_select][0]
+
+    new_sol = removed_sol
+    i_pos = 0
+
     for call in calls:
         new_sol.insert(i_vehicle + i_pos, call)
         i_pos += 1
         new_sol.insert(i_vehicle + i_pos, call)
         i_pos += 1
- 
-    return new_sol
-    
-    
-    
 
+    # Shuffle the calls:
+    vehicle_ranges = zero_pos(new_sol)
+    start, end = vehicle_ranges[vehicle_to_select]
+
+    shuffled_part = np.array(new_sol[start:end+1])
+    shuffled_part = shuffled_part[:-1]  
+    np.random.shuffle(shuffled_part)
+
+    new_sol[start:end+1] = shuffled_part.tolist() + [0]
+    
+    return new_sol
+
+    
 def greedy_reinsert(calls, prob, removed_sol): # KANSKJE KUNN SJEKKE HALVPARTEN AV BILENE VELG DEM RANDOM
     best_sol = removed_sol.copy()
     
@@ -47,7 +79,6 @@ def greedy_reinsert(calls, prob, removed_sol): # KANSKJE KUNN SJEKKE HALVPARTEN 
         new_best_cost = 1e12
         
         for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-            # Use NumPy to check vessel cargo more efficiently
             if vehicle_index == prob['n_vehicles']:
                 continue
             if prob['VesselCargo'][vehicle_index][call - 1] == 0:
@@ -79,53 +110,9 @@ def greedy_reinsert(calls, prob, removed_sol): # KANSKJE KUNN SJEKKE HALVPARTEN 
         
     return best_sol
 
-
-def soft_greedy_reinsert(calls, prob, removed_sol, temperature=1.0):
-    best_sol = removed_sol[:]
-    
-    for call in calls:
-        vehicle_ranges = zero_pos(removed_sol)
-        new_best_sol = None
-        new_best_cost = float('inf')
-
-        for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-            if vehicle_index == prob['n_vehicles']:
-                continue
-            if prob['VesselCargo'][vehicle_index][call - 1] == 0:
-                continue
-            
-            # Only check a subset of positions instead of all
-            pickup_positions = range(start, end + 1)
-            delivery_positions = range(start + 1, end + 2)
-            
-            for p_pos in pickup_positions:
-                temp_p_sol = best_sol[:]
-                temp_p_sol.insert(p_pos, call)
-                
-                for d_pos in delivery_positions:
-                    temp_d_sol = temp_p_sol[:]
-                    temp_d_sol.insert(d_pos, call)
-                    
-                    if not feasibility_check(temp_d_sol, prob)[0]:
-                        continue
-                    
-                    temp_cost = cost_function(temp_d_sol, prob)
-                    
-                    if temp_cost < new_best_cost or random.uniform(0, 1) < np.exp(-(temp_cost - new_best_cost) / temperature):
-                        new_best_sol = temp_d_sol
-                        new_best_cost = temp_cost
-            
-        if new_best_sol is None:
-            best_sol.append(call)
-            best_sol.append(call)
-        else:
-            best_sol = new_best_sol
-
-    return best_sol
-
 """
 This operator chooses the vehicle with the biggest weight, and then chooses
-a random number of calls between two and twenty of the calls inside that vehicle. 
+a random number of calls between one and ten of the calls inside that vehicle. 
 """
 def OP1(prob, sol): # Change this operator such that it doesnt calculate all the calls and vehicle weights,
     # but maybe choose one vehicle randomly, and if it is full we will use it!
@@ -170,15 +157,15 @@ def OP1(prob, sol): # Change this operator such that it doesnt calculate all the
     return new_sol
 
 """
-This operation randomly chooses between 2 and 10 calls depending on the size of the file.
-Then inserst the calls back into the solution by using a soft greedy function.
+This operator randomly chooses between 2 and 10 calls depending on the size of the file.
+Then inserst the calls back into the solution by using a easy_shuffle_reinsert.
 """
 def OP2(prob, sol):
     new_sol = sol.copy()
     calls = prob['n_calls']
     calls_to_reinsert = []
 
-    # Choose a random number between 2 and 20
+    # Choose a random number between 1 and 10
     if calls < 10:
         calls_n = np.random.randint(1, calls + 1)
     else:
@@ -190,7 +177,7 @@ def OP2(prob, sol):
     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
     
     # new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
-    new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
     
     return new_sol
 
@@ -198,7 +185,7 @@ def OP2(prob, sol):
 
 """
 This operator chooses randomly a car that contains calls,
-then it randomly chooses calls between 2 and 10.
+then it randomly chooses calls between 1 and 10.
 """
 def OP3(prob, sol):
     new_sol = sol.copy()
@@ -211,21 +198,16 @@ def OP3(prob, sol):
         chosen_vehicle_index = np.random.randint(0, vehicles + 1)
     
     start, end = vehicle_ranges[chosen_vehicle_index]
-    
-    # Choose unique calls from the vehicle
+
     vehicle_calls = new_sol[start:end]
     unique_calls = set(vehicle_calls)
     unique_calls.discard(0)    
     calls_list = list(unique_calls)
-    
-    # Generating a random number of calls to remove
+
     if len(calls_list) < 10:
         calls_n = np.random.randint(1, len(calls_list) + 1)
     elif len(calls_list) >= 10:
         calls_n = np.random.randint(2, 10)
-    # else:
-    #     calls_n = len(calls_list)
-    
     
     calls_to_reinsert = []
     while calls_n > 0:
@@ -242,26 +224,21 @@ def OP3(prob, sol):
     return new_sol
 
 def equal_simulated_annealing(prob, initial_sol):
-    # Initialize parameters
     best_sol = initial_sol.copy()
     incumbent = initial_sol.copy()
-    T_f = 0.1  # Final temperature
+    T_f = 0.1  
     
     # probabilities for operators
     P1, P2, P3 = 1/3, 1/3, 1/3
     operators = ["P1", "P2", "P3"]
     probabilities = [P1, P2, P3]
 
-        
-    # Initial cost calculations
     incumbent_cost = cost_function(incumbent, prob)
     best_cost = incumbent_cost
-    
-    # Tracking temperature and cost changes
+
     delta_w = []
     
-    # First phase: Exploration and delta_w calculation
-    for w in range(1, 100):  # Increased range for more thorough exploration
+    for w in range(1, 100): 
         chosen_operator = random.choices(operators, weights=probabilities, k=1)[0]
         if chosen_operator == 'P1':
             new_sol = OP1(prob, incumbent)
@@ -282,21 +259,96 @@ def equal_simulated_annealing(prob, initial_sol):
                 best_sol = incumbent
                 best_cost = incumbent_cost
         elif feasibility:
-            # Probabilistic acceptance of worse solutions
             if random.random() < 0.8:
                 incumbent = new_sol
                 incumbent_cost = new_cost
             delta_w.append(delta_E)
     
-    # Calculate initial temperature
     delta_avg = np.mean(delta_w) 
     T_0 = -delta_avg / math.log(0.8)
-    
-    # Compute cooling rate
+
     alpha = (T_f / T_0) ** (1/9900) 
     T = T_0
     
-    # Main simulated annealing loop
+    for i in range(1, 9900):
+        if i % 1000 == 0:
+            print(f"Vi er her: {i}")
+        chosen_operator = random.choices(operators, weights=probabilities, k=1)[0]
+        if chosen_operator == 'P1':
+            new_sol = OP1(prob, incumbent)
+        elif chosen_operator == 'P2':
+            new_sol = OP2(prob, incumbent)
+        elif chosen_operator == 'P3':
+            new_sol = OP3(prob, incumbent)
+
+        feasibility, _ = feasibility_check(new_sol, prob)
+        new_cost = cost_function(new_sol, prob)
+        delta_E = new_cost - incumbent_cost
+       
+        if feasibility and delta_E < 0:
+            incumbent = new_sol
+            incumbent_cost = new_cost
+            
+            if incumbent_cost < best_cost:
+                best_sol = incumbent
+                best_cost = incumbent_cost
+        elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
+            incumbent = new_sol
+            incumbent_cost = new_cost
+
+        T = alpha * T
+    
+    return best_sol
+    
+
+
+def tuned_simulated_annealing(prob, initial_sol):
+    best_sol = initial_sol.copy()
+    incumbent = initial_sol.copy()
+    T_f = 0.1 
+    
+    # Tuned probabilities for operators
+    P1, P2, P3 = 0.2, 0.6, 0.2
+    operators = ["P1", "P2", "P3"]
+    probabilities = [P1, P2, P3]
+
+    incumbent_cost = cost_function(incumbent, prob)
+    best_cost = incumbent_cost
+ 
+    delta_w = []
+    
+    for w in range(1, 100): 
+        chosen_operator = random.choices(operators, weights=probabilities, k=1)[0]
+        if chosen_operator == 'P1':
+            new_sol = OP1(prob, incumbent)
+        elif chosen_operator == 'P2':
+            new_sol = OP2(prob, incumbent)
+        elif chosen_operator == 'P3':
+            new_sol = OP3(prob, incumbent)            
+            
+        feasibility, c = feasibility_check(new_sol, prob)
+        new_cost = cost_function(new_sol, prob)
+        delta_E = new_cost - incumbent_cost
+        
+        if feasibility and delta_E < 0:
+            incumbent = new_sol
+            incumbent_cost = new_cost
+            
+            if incumbent_cost < best_cost:
+                best_sol = incumbent
+                best_cost = incumbent_cost
+        elif feasibility:
+            if random.random() < 0.8:
+                incumbent = new_sol
+                incumbent_cost = new_cost
+            delta_w.append(delta_E)
+
+    delta_avg = np.mean(delta_w) 
+    T_0 = -delta_avg / math.log(0.8)
+    
+    alpha = (T_f / T_0) ** (1/9900) 
+    T = T_0
+
     for i in range(1, 9900):
         if i % 1000 == 0:
             print(f"Vi er her: {i}")
@@ -323,13 +375,13 @@ def equal_simulated_annealing(prob, initial_sol):
             incumbent = new_sol
             incumbent_cost = new_cost
         
-        # Cooling schedule
         T = alpha * T
-    # print(best_sol)
     
     return best_sol
-    
 
+
+
+# Different operators I've started to implement, then I've regretted or I am going to try to implement/ideas.
 
 # Criteria: 
 # Let the operator pick calls from different vehicles at the same time
@@ -400,3 +452,6 @@ def not_OP2(prob, sol):
     
     
     return
+
+
+# Have an operator that checks if there is any cars in the dumy that can be moved into any of the vehicles

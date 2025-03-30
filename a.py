@@ -309,27 +309,66 @@
                 
 #     return new_sol
 
-sol = [1,1]
+# sol = [1,1]
 
-calls = [4,5,6]
-vehicle = [[1,1], [2,2]]
+# calls = [4,5,6]
+# vehicle = [[1,1], [2,2]]
 
-index_pos = 0
-chosen_vehicle = 1
+# index_pos = 0
+# chosen_vehicle = 1
 
-for call in calls:
-    vehicle[chosen_vehicle].insert(index_pos, call)
-    index_pos += 1
-    vehicle[chosen_vehicle].insert(index_pos, call)
-    index_pos += 1
+# for call in calls:
+#     vehicle[chosen_vehicle].insert(index_pos, call)
+#     index_pos += 1
+#     vehicle[chosen_vehicle].insert(index_pos, call)
+#     index_pos += 1
 
 
-# sol.insert(0, calls)
+# # sol.insert(0, calls)
 
-print(vehicle)
+# print(vehicle)
 
-vehicle_ranges = ((0,0), (1,1), (2,2), (3, 5))
-random_vehicle_i = 1
+# vehicle_ranges = ((0,0), (1,1), (2,2), (3, 5))
+# random_vehicle_i = 1
 
-print(vehicle_ranges[1][0])
+# print(vehicle_ranges[1][0])
 
+# import numpy as np
+
+# lst = [1, 2, 2, 1, 0, 3, 3, 4, 7, 7, 4, 0, 6, 6, 5, 5]
+# zero_pos = ((0, 4), (5, 11), (12, 15))
+
+# # Extract the sublist that needs to be shuffled
+# start, end = zero_pos[1]  # Interval (5,11)
+# sublist = lst[start:end+1]
+
+# # Shuffle the sublist
+# np.random.shuffle(sublist)
+
+# # Put the shuffled sublist back
+# lst[start:end+1] = sublist
+
+# print(lst)
+
+import numpy as np
+
+lst = [1, 2, 2, 1, 0, 3, 3, 4, 7, 7, 4, 0, 6, 6, 5, 5]
+zero_pos = ((0, 4), (5, 11), (12, 15))
+
+# Extract the start and end index of the interval to shuffle
+start, end = zero_pos[1]  # Interval (5,11)
+
+# Convert the relevant slice into a NumPy array, shuffle it, and put it back
+shuffled_part = np.array(lst[start:end+1])
+print(shuffled_part)
+shuffled_part = shuffled_part[:-1]
+print(shuffled_part)
+np.random.shuffle(shuffled_part)
+print(shuffled_part)
+
+
+
+# Reassign the shuffled values to the original list
+lst[start:end+1] = shuffled_part.tolist() + [0]
+
+print(lst)
