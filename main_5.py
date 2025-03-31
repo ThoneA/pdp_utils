@@ -8,8 +8,8 @@ files = [
         # 'Call_7_Vehicle_3.txt', 
           'Call_300_Vehicle_90.txt',
           'Call_130_Vehicle_40.txt',
-        #   'Call_80_Vehicle_20.txt',
-        #   'Call_35_Vehicle_7.txt',
+          'Call_80_Vehicle_20.txt',
+          'Call_35_Vehicle_7.txt',
         #   'Call_18_Vehicle_5.txt'
         ]
 
@@ -29,7 +29,7 @@ for file in files:
     for run in range(num_runs):
         print(f"Run {run}")
         try:
-            sol = general_adaptive_metaheuristics(prob, initial_sol)
+            sol, op_stats = general_adaptive_metaheuristics(prob, initial_sol)
             cost = cost_function(sol, prob)
             feasiblity, c = feasibility_check(sol, prob)
             
@@ -39,6 +39,7 @@ for file in files:
                 if cost < best_obj:
                     best_obj = cost
                     best_sol = sol
+                    best_op_stats = op_stats
             else:
                 print("Infeasible solution")
         except Exception as e:
@@ -83,4 +84,9 @@ for file, stats in results.items():
             print(f"{key}: {value:.2f}")
         else:
             print(f"{key}: {value}")
-            
+    
+    # Print operator statistics
+    print("\nOperator Performance:")
+    for op_name, stats in best_op_stats.items():
+        print(f"{op_name}: Score={stats['score']}, Used={stats['counter']}, Final Probability={stats['probability']:.4f}")
+                

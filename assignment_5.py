@@ -48,16 +48,16 @@ def soft_greedy_reinsert(calls, prob, removed_sol):
                 temp_d_sol = temp_p_sol.copy()
                 temp_d_sol.insert(d_pos, call)
                 
-                feasibility, _ = feasibility_check(temp_d_sol, prob)
-                if not feasibility:
-                    continue
+                # feasibility, _ = feasibility_check(temp_d_sol, prob)
+                # if not feasibility:
+                #     continue
                 
-                if feasibility:
-                    temp_cost = cost_function(temp_d_sol, prob)
+                # if feasibility:
+                temp_cost = cost_function(temp_d_sol, prob)
                     
-                    if temp_cost < new_best_cost:
-                        new_best_sol = temp_d_sol
-                        new_best_cost = temp_cost
+                if temp_cost < new_best_cost:
+                    new_best_sol = temp_d_sol
+                    new_best_cost = temp_cost
         
         if new_best_cost == 1e12:
             best_sol.insert(len(best_sol), call)
@@ -67,9 +67,7 @@ def soft_greedy_reinsert(calls, prob, removed_sol):
             best_sol = new_best_sol
     
     return best_sol
-            
-    
-
+              
 """
 This reinsertion function, chooses a vehicle randomly and then adds the calls one by one into random vehicles
 """
@@ -94,8 +92,6 @@ def random_reinsert(calls, prob, removed_sol):
         new_sol.insert(delivery_pos, call)
     
     return new_sol
-    
-    
 
 """
 This insertion function inserts all the calls into a random vehicle
@@ -147,11 +143,38 @@ def easy_shuffle_reinsert(calls, prob, removed_sol):
     
     return new_sol
 
+# Ha en reinsert som sjekker om noen biler ikke har noen calls, for så og prøv å reinsert i den
+def empty_reinsert(calls, prob, removed_sol):
+    new_sol = removed_sol
+    vehicle_ranges = zero_pos(new_sol)
+    
+    for call in calls:
+        inserted_calls = False
+        for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+            if end > start:
+                continue
+            else:
+                temp_sol = new_sol.copy()
+                temp_sol.insert(start + 1, call)
+                temp_sol.insert(start + 2, call)
+                feasibility, _ = feasibility_check(temp_sol, prob)
+                
+                if feasibility:
+                    new_sol = temp_sol
+                    inserted_calls = True
+                    break
+        
+        if not inserted_calls:
+            new_sol.append(call)
+            new_sol.append(call)
+    
+    return new_sol   
+        
 """
 This operator chooses the vehicle with the biggest weight, and then chooses
 a random number of calls between one and ten of the calls inside that vehicle. 
 """
-def OP1(prob, sol): 
+def weighted_removal(prob, sol, reinsert): 
     new_sol = sol.copy()
     vehicle_ranges = zero_pos(sol)
     biggest_weight = 0
@@ -187,19 +210,20 @@ def OP1(prob, sol):
         # Remove selected calls
         new_sol = [x for x in new_sol if x not in selected_calls]
         
-        x = "1234"
-        chosen_reinsertion = random.choice(x)
+        # x = "1234"
+        # chosen_reinsertion = random.choice(x)
         
-        if chosen_reinsertion == "1":
-            new_sol = random_reinsert(selected_calls, prob, new_sol)
-        elif chosen_reinsertion == "2":
-            new_sol = easy_reinsert(selected_calls, prob, new_sol)
-        elif chosen_reinsertion == "3":
-            new_sol = easy_shuffle_reinsert(selected_calls, prob, new_sol)
-        elif chosen_reinsertion == "4":
-            new_sol = soft_greedy_reinsert(selected_calls, prob, new_sol)
+        # if chosen_reinsertion == "1":
+        #     new_sol = random_reinsert(selected_calls, prob, new_sol)
+        # elif chosen_reinsertion == "2":
+        #     new_sol = easy_reinsert(selected_calls, prob, new_sol)
+        # elif chosen_reinsertion == "3":
+        #     new_sol = easy_shuffle_reinsert(selected_calls, prob, new_sol)
+        # elif chosen_reinsertion == "4":
+        #     new_sol = soft_greedy_reinsert(selected_calls, prob, new_sol)
+            # new_sol = empty_reinsert(selected_calls, prob, new_sol)
         
-        # new_sol = reinsert(selected_calls, prob, new_sol)
+        new_sol = reinsert(selected_calls, prob, new_sol)
       
     return new_sol
 
@@ -207,7 +231,7 @@ def OP1(prob, sol):
 This operator randomly chooses between 2 and 10 calls depending on the size of the file.
 Then inserst the calls back into the solution by using a easy_shuffle_reinsert.
 """
-def OP2(prob, sol):
+def random_removal_1(prob, sol, reinsert):
     new_sol = sol.copy()
     calls = prob['n_calls']
     calls_to_reinsert = []
@@ -225,29 +249,28 @@ def OP2(prob, sol):
     
     # new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    x = "1234"
-    chosen_reinsertion = random.choice(x)
+    # x = "1234"
+    # chosen_reinsertion = random.choice(x)
     
-    if chosen_reinsertion == "1":
-        new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "2":
-        new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "3":
-        new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "4":
-        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    # if chosen_reinsertion == "1":
+    #     new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "2":
+    #     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "3":
+    #     new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "4":
+    #     new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+        # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
     
-    # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = reinsert(calls_to_reinsert, prob, new_sol)
         
     return new_sol
-
-
 
 """
 This operator chooses randomly a car that contains calls,
 then it randomly chooses calls between 1 and 10.
 """
-def OP3(prob, sol):
+def random_removal_2(prob, sol, reinsert):
     new_sol = sol.copy()
     vehicles = prob['n_vehicles']
     vehicle_ranges = zero_pos(sol)
@@ -280,29 +303,31 @@ def OP3(prob, sol):
     
     # new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
     # new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    x = "1234"
-    chosen_reinsertion = random.choice(x)
+    # x = "1234"
+    # chosen_reinsertion = random.choice(x)
     
-    if chosen_reinsertion == "1":
-        new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "2":
-        new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "3":
-        new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "4":
-        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    # if chosen_reinsertion == "1":
+    #     new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "2":
+    #     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "3":
+    #     new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "4":
+    #     new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+        # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
     
-    # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = reinsert(calls_to_reinsert, prob, new_sol)
     
     return new_sol
 
 """
 This operator checks if there are any calls in the dummy that can be inserted into any of the vehicles
 """
-def OP4(prob, sol):
+def dummy_removal(prob, sol, reinsert):
     new_sol = sol.copy()
     vehicle_ranges = zero_pos(new_sol)
     
+    # The dummy
     vehicle_index, (start, end) = list(enumerate(vehicle_ranges))[-1]
     vehicle_calls = new_sol[start:end]
     unique_calls = set(vehicle_calls)
@@ -314,45 +339,96 @@ def OP4(prob, sol):
             calls_n = np.random.randint(1, len(calls_list) + 1)
         elif len(calls_list) >= 10:
             calls_n = np.random.randint(2, 10)
+    
             
-    calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)  
+        # calls_to_reinsert = random.sample(calls_list, calls_n)  
+    # calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
+    calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)
     
     # Remove selected calls
     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
     
     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    x = "1234"
-    chosen_reinsertion = random.choice(x)
+    # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
+    # return new_sol
     
-    if chosen_reinsertion == "1":
-        new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "2":
-        new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "3":
-        new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "4":
-        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+  
+    # x = "1234"
+    # chosen_reinsertion = random.choice(x)
     
-    # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    # if chosen_reinsertion == "1":
+    #     new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "2":
+    #     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "3":
+    #     new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+    # elif chosen_reinsertion == "4":
+    #     new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
     
-    return new_sol  
+    # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = reinsert(calls_to_reinsert, prob, new_sol)
     
+    return new_sol 
 
+
+def OP1(prob, sol):
+    # return weighted_removal(prob, sol, soft_greedy_reinsert)
+    # return random_removal_1(prob, sol, soft_greedy_reinsert)
+    return dummy_removal(prob, sol, soft_greedy_reinsert) # 7_calls, 49,88%
+
+def OP2(prob, sol):
+    return random_removal_2(prob, sol, soft_greedy_reinsert) # 7_calls, 36%
+
+def OP3(prob, sol):
+    # return weighted_removal(prob, sol, random_reinsert)
+    # return random_removal_1(prob, sol, random_reinsert)
+    # return random_removal_2(prob, sol, random_reinsert)
+    return dummy_removal(prob, sol, random_reinsert)
+
+def OP4(prob, sol): 
+    return weighted_removal(prob, sol, easy_reinsert)# 18_calls has a probability of 73,33%
+    # return random_removal_1(prob, sol, easy_reinsert)
+    # return random_removal_2(prob, sol, easy_reinsert)
+    # return dummy_removal(prob, sol, easy_reinsert)
+
+def OP5(prob, sol):
+    return weighted_removal(prob, sol, easy_shuffle_reinsert) # 7_calls, has a probability of 66,15%
+    # return random_removal_1(prob, sol, easy_shuffle_reinsert)
+    # return random_removal_2(prob, sol, easy_shuffle_reinsert)
+
+def OP6(prob, sol):
+    return dummy_removal(prob, sol, easy_shuffle_reinsert) # 7_calls, 36%
+    
+def OP7(prob, sol): 
+    # return weighted_removal(prob, sol, empty_reinsert)
+    return random_removal_1(prob, sol, empty_reinsert) # 7_calls, has a probability of 40%, # 35_calls, har a probability of 71,61%
+
+def OP8(prob, sol):
+    return random_removal_2(prob, sol, empty_reinsert) # 7_calls, 32,9%, 53_calls, 75%
+
+def OP9(prob, sol):
+    return dummy_removal(prob, sol, empty_reinsert) # 35_calls, 40%
+
+
+  
 
 def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
     best_sol = initial_sol.copy()
     incumbent = initial_sol.copy()
     T_f = 0.1  
     
-    # Define operators with names and their respective functions
     operators = [
         {"name": "P1", "function": OP1},
         {"name": "P2", "function": OP2},
         {"name": "P3", "function": OP3},
-        {"name": "P4", "function": OP4}
+        {"name": "P4", "function": OP4},
+        {"name": "P5", "function": OP5},
+        {"name": "P6", "function": OP6},
+        {"name": "P7", "function": OP7},
+        {"name": "P8", "function": OP8},
+        {"name": "P9", "function": OP9}
     ]
-    
-    # Initialize operator statistics
+
     op_stats = {}
     for op in operators:
         op_stats[op["name"]] = {
@@ -361,12 +437,8 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
             "probability": 1.0 / len(operators)
         }
     
-    # Get probability list for selection
-    def get_probabilities():
-        return [op_stats[op["name"]]["probability"] for op in operators]
-    
     iterations_since_best = 0
-    escape_condition = 100  # After this many iterations without improvement, apply escape
+    escape_condition = 1000  # After this many iterations without improvement, apply escape
 
     incumbent_cost = cost_function(incumbent, prob)
     best_cost = incumbent_cost
@@ -376,7 +448,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
     # Initial warmup phase
     for w in range(1, 100): 
         # Select operator based on current probabilities
-        probabilities = get_probabilities()
+        probabilities = [op_stats[op["name"]]["probability"] for op in operators]
         chosen_op_idx = random.choices(range(len(operators)), weights=probabilities, k=1)[0]
         chosen_op = operators[chosen_op_idx]
         
@@ -402,11 +474,8 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
                 best_sol = incumbent.copy()
                 best_cost = incumbent_cost
                 iterations_since_best = 0
-                
-                # # New best solution: +4 points (except P2 which gets +2)
-                # points = 2 if chosen_op["name"] == "P2" else 4
-                # op_stats[chosen_op["name"]]["score"] += points
-
+           
+                # New best solution: +4 points
                 op_stats[chosen_op["name"]]["score"] += 4
                
         elif feasibility:
@@ -418,19 +487,18 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
             # Feasible but not better: +1 point
             op_stats[chosen_op["name"]]["score"] += 1
     
-    # Calculate initial temperature
     if delta_w:
         delta_avg = np.mean(delta_w) 
         T_0 = -delta_avg / math.log(0.8)
     else:
-        T_0 = 1.0  # Default if no deltas were recorded
+        T_0 = 1.0  
         
     alpha = (T_f / T_0) ** (1/9900) 
     T = T_0
     
-    # Main phase
+
     for i in range(1, 9900):
-        # Check if we need to escape local optimum
+        # Checking if we need to escape local optimum
         if iterations_since_best > escape_condition:
             vehicle_ranges = zero_pos(incumbent)
             
@@ -445,19 +513,19 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
             iterations_since_best = 0
             incumbent_cost = cost_function(incumbent, prob)
             
-        # Update operator probabilities periodically
+        # Updating operator probabilities periodically
         if i % segment_size == 0 and i > 0:
             total_score = sum(op_stats[op["name"]]["score"] for op in operators)
             total_count = sum(op_stats[op["name"]]["counter"] for op in operators)
             
             if total_score > 0 and total_count > 0:
-                # Calculate new probabilities for each operator
+                # Calculating new probabilities for each operator
                 for op in operators:
                     op_name = op["name"]
                     counter = max(1, op_stats[op_name]["counter"])
                     score = op_stats[op_name]["score"]
                     
-                    # Calculate normalized score
+                    # Calculating normalized scores
                     op_stats[op_name]["probability"] = (score / counter + 0.01) / (total_score / total_count + 0.03 * len(operators))
                 
                 # Normalize probabilities to sum to 1
@@ -468,6 +536,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
             
             # Reset scores and counters for the next segment
             for op in operators:
+                # print(f'The score of {op["name"]} = {op_stats[op["name"]]["score"]}')
                 op_stats[op["name"]]["score"] = 0
                 op_stats[op["name"]]["counter"] = 0
             
@@ -476,7 +545,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
             # print(f"Vi er her: {i}")
             
         # Select and apply operator
-        probabilities = get_probabilities()
+        probabilities = [op_stats[op["name"]]["probability"] for op in operators]
         chosen_op_idx = random.choices(range(len(operators)), weights=probabilities, k=1)[0]
         chosen_op = operators[chosen_op_idx]
         
@@ -502,9 +571,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
                 best_cost = incumbent_cost
                 iterations_since_best = 0
                 
-                # # New best solution: +4 points (except P2 which gets +2)
-                # points = 2 if chosen_op["name"] == "P2" else 4
-                # op_stats[chosen_op["name"]]["score"] += points
+                # New best solution: +4 points
                 op_stats[chosen_op["name"]]["score"] += 4
             
             else:
@@ -524,7 +591,11 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
 
         T = alpha * T
     
-    return best_sol
+    return best_sol, op_stats
+
+
+# IDEA:
+# Make the reinsertion functions also weighted, such that the 'general_adaptive_metaheuristics' function can be sure to use the right reinsertion function on the best operator! 
 
 # def general_adaptive_metaheuristics(prob, initial_sol, segment_size = 100):
     best_sol = initial_sol.copy()
