@@ -150,12 +150,117 @@
 # vehicle_ranges = zero_pos(new_sol)
 # print(vehicle_ranges)
 
+import random
 import numpy as np
 
 
-n = np.random.randint(0, 3)
+# n = np.random.randint(0, 3)
 
-while n != 3:
-    n = np.random.randint(0, 3)
+# while n != 3:
+#     n = np.random.randint(0, 3)
 
-print(n)
+# # print(n)
+
+vehicle_ranges = ((0,0), (1,1), (2,2), (3,7))
+
+start, end = list(vehicle_ranges)[1]
+
+# vehicle_index, (start, end) = list(enumerate(vehicle_ranges))[-1]
+print(start, end)
+
+# if end > start:
+#     print('hei')
+#     print(end, start)
+# x = "123"
+# chosen_reinsertion = random.choice(x)
+
+# if chosen_reinsertion == "1":
+#     print("1 er valgt")
+# elif chosen_reinsertion == "2":
+#     print("2 er valgt")
+# elif chosen_reinsertion == "3":
+#     print("3 er valgt")
+# else:
+#     print("dette fungerer ikke")
+    
+    
+    
+    
+    
+    
+    
+    
+import time
+from pdp_utils import *
+from pdp_utils.operators import *
+import traceback
+    
+    
+    
+    
+    
+def greedy_reinsert(calls, prob, removed_sol): # KANSKJE KUNN SJEKKE HALVPARTEN AV BILENE VELG DEM RANDOM
+    best_sol = removed_sol.copy()
+    
+    for call in calls:
+        vehicle_ranges = zero_pos(removed_sol)
+        new_best_sol = best_sol.copy()
+        new_best_cost = 1e12
+        
+        for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+            if vehicle_index == prob['n_vehicles']:
+                continue
+            if prob['VesselCargo'][vehicle_index][call - 1] == 0:
+                continue
+            
+            # PICKUP
+            for p_pos in range(start, end + 1):
+                temp_p_sol = best_sol.copy()
+                temp_p_sol.insert(p_pos, call)
+                
+                # DELIVERY             
+                for d_pos in range(p_pos + 1, end + 2):
+                    temp_d_sol = temp_p_sol.copy()
+                    temp_d_sol.insert(d_pos, call)
+                
+                    feasibility, _ = feasibility_check(temp_d_sol, prob)
+                    if feasibility:
+                        temp_cost = cost_function(temp_d_sol, prob)
+                        
+                        if temp_cost < new_best_cost:
+                            new_best_sol = temp_d_sol
+                            new_best_cost = temp_cost
+                            
+        if new_best_cost == 1e12:
+            best_sol.insert(len(best_sol), call)
+            best_sol.insert(len(best_sol), call)
+        else:
+            best_sol = new_best_sol
+        
+    return best_sol
+
+
+def OP2(prob, sol, reinsert):
+    new_sol = sol.copy()
+    calls = prob['n_calls']
+    calls_to_reinsert = []
+
+    # Choose a random number between 1 and 10
+    if calls < 10:
+        calls_n = np.random.randint(1, calls + 1)
+    else:
+        calls_n = np.random.randint(2, 10)
+    
+    calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
+
+    # Remove selected calls
+    new_sol = [x for x in new_sol if x not in calls_to_reinsert]
+    
+    new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    
+    return new_sol
+
+prob = load_problem('pdp_utils/data/pd_problem/Call_7_Vehicle_3.txt')
+initial_sol = initial_solution(prob)
+
+print(OP2(prob, initial_sol, greedy_reinsert))

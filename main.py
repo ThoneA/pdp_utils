@@ -4,11 +4,11 @@ from pdp_utils.operators import *
 import traceback
 
 files = [
-        'Call_7_Vehicle_3.txt', 
-          'Call_300_Vehicle_90.txt',
-          'Call_130_Vehicle_40.txt',
-          'Call_80_Vehicle_20.txt',
-          'Call_35_Vehicle_7.txt',
+        # 'Call_7_Vehicle_3.txt', 
+        #   'Call_300_Vehicle_90.txt',
+        #   'Call_130_Vehicle_40.txt',
+        #   'Call_80_Vehicle_20.txt',
+        #   'Call_35_Vehicle_7.txt',
           'Call_18_Vehicle_5.txt'
         ]
 
@@ -28,7 +28,8 @@ for file in files:
     for run in range(num_runs):
         print(f"Run {run}")
         try:
-            sol = tuned_simulated_annealing(prob, initial_sol)
+            # sol = tuned_simulated_annealing(prob, initial_sol)
+            sol = OP1(prob, initial_sol)
             cost = cost_function(sol, prob)
             feasiblity, c = feasibility_check(sol, prob)
             

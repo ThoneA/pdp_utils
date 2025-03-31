@@ -110,6 +110,73 @@ def greedy_reinsert(calls, prob, removed_sol): # KANSKJE KUNN SJEKKE HALVPARTEN 
         
     return best_sol
 
+def random_reinsert(calls, prob, removed_sol):
+    vehicles_n = prob['n_vehicles']
+    vehicle_ranges = zero_pos(removed_sol)
+    new_sol = removed_sol
+    
+    for call in calls:    
+        vehicle_to_select = np.random.randint(0, vehicles_n)
+        vehicle_index, (start, end) = list(enumerate(vehicle_ranges))[vehicle_to_select]
+        
+        # Insert pickup
+        pickup_pos = np.random.randint(start, end + 1)
+        new_sol.insert(pickup_pos, call)
+        
+        # Insert delivery
+        if pickup_pos < end:
+            delivery_pos = np.random.randint(pickup_pos + 1, end + 1)
+        else:
+            delivery_pos = pickup_pos + 1
+        new_sol.insert(delivery_pos, call)
+    
+    return new_sol
+
+def soft1_greedy_reinsert(calls, prob, removed_sol):
+    best_sol = removed_sol
+    vehicle_ranges = zero_pos(removed_sol)
+    vehicles_n = prob['n_vehicles']
+    
+    
+    for call in calls:
+        selected_vehicle = np.random.randint(0, vehicles_n)
+        while prob['VesselCargo'][selected_vehicle][call - 1] == 0:
+            selected_vehicle = np.random.randint(0, vehicles_n)
+        
+        start, end = list(vehicle_ranges)[selected_vehicle]
+        new_best_sol = best_sol.copy()
+        new_best_cost = 1e12
+        
+ 
+        # PICKUP
+        for p_pos in range(start, end + 1):
+            temp_p_sol = best_sol.copy()
+            temp_p_sol.insert(p_pos, call)
+            
+            # DELIVERY
+            for d_pos in range(p_pos + 1, end + 2):
+                temp_d_sol = temp_p_sol.copy()
+                temp_d_sol.insert(d_pos, call)
+                
+                feasibility, _ = feasibility_check(temp_d_sol, prob)
+                # if not feasibility:
+                #     continue
+                if feasibility:
+                    temp_cost = cost_function(temp_d_sol, prob)
+                    
+                    if temp_cost < new_best_cost:
+                        new_best_sol = temp_d_sol
+                        new_best_cost = temp_cost
+        
+        if new_best_cost == 1e12:
+            best_sol.insert(len(best_sol), call)
+            best_sol.insert(len(best_sol), call)
+        
+        else:
+            best_sol = new_best_sol
+    
+    return best_sol
+
 """
 This operator chooses the vehicle with the biggest weight, and then chooses
 a random number of calls between one and ten of the calls inside that vehicle. 
@@ -117,42 +184,44 @@ a random number of calls between one and ten of the calls inside that vehicle.
 def OP1(prob, sol): # Change this operator such that it doesnt calculate all the calls and vehicle weights,
     # but maybe choose one vehicle randomly, and if it is full we will use it!
     new_sol = sol.copy()
-    vehicle_ranges = zero_pos(sol)
-    biggest_weight = 0
-    calls_to_reinsert = [] 
-    calls = prob['n_calls']
-    
-    for vehicle_index, (start, end) in enumerate(vehicle_ranges):      
-        vehicle_calls = new_sol[start:end]
-        unique_calls = set(vehicle_calls)
-        unique_calls.discard(0)
+    for i in range(100):
+        vehicle_ranges = zero_pos(sol)
+        biggest_weight = 0
+        calls_to_reinsert = [] 
+        calls = prob['n_calls']
         
-        if not unique_calls:
-            continue
-    
-        calls_list = list(unique_calls)
-        call_indices = np.array([x - 1 for x in calls_list if x - 1 < calls])
-        
-        if len(call_indices) > 0:
-            vehicle_weight = np.sum(prob['Cargo'][call_indices, 2])
+        for vehicle_index, (start, end) in enumerate(vehicle_ranges):      
+            vehicle_calls = new_sol[start:end]
+            unique_calls = set(vehicle_calls)
+            unique_calls.discard(0)
             
-            if vehicle_weight > biggest_weight:
-                biggest_weight = vehicle_weight
-                calls_to_reinsert = calls_list
-    
-    if calls_to_reinsert:
-        if len(calls_to_reinsert) < 10:
-            num_to_select = np.random.randint(1, len(calls_to_reinsert) + 1)
-        else:
-            num_to_select = np.random.randint(1, 10)
+            if not unique_calls:
+                continue
         
-        selected_calls = np.random.choice(calls_to_reinsert, num_to_select, replace=False)
+            calls_list = list(unique_calls)
+            call_indices = np.array([x - 1 for x in calls_list if x - 1 < calls])
+            
+            if len(call_indices) > 0:
+                vehicle_weight = np.sum(prob['Cargo'][call_indices, 2])
+                
+                if vehicle_weight > biggest_weight:
+                    biggest_weight = vehicle_weight
+                    calls_to_reinsert = calls_list
         
-        # Remove selected calls
-        new_sol = [x for x in new_sol if x not in selected_calls]
-        
+        if calls_to_reinsert:
+            if len(calls_to_reinsert) < 10:
+                num_to_select = np.random.randint(1, len(calls_to_reinsert) + 1)
+            else:
+                num_to_select = np.random.randint(1, 10)
+            
+            selected_calls = np.random.choice(calls_to_reinsert, num_to_select, replace=False)
+            
+            # Remove selected calls
+            new_sol = [x for x in new_sol if x not in selected_calls]
+            
         # new_sol = soft_greedy_reinsert(selected_calls, prob, new_sol)
-        new_sol = easy_reinsert(selected_calls, prob, new_sol)
+        # new_sol = easy_reinsert(selected_calls, prob, new_sol)
+            new_sol = soft1_greedy_reinsert(selected_calls, prob, new_sol)
                 
     return new_sol
 
@@ -455,3 +524,9 @@ def not_OP2(prob, sol):
 
 
 # Have an operator that checks if there is any cars in the dumy that can be moved into any of the vehicles
+
+# OP1
+# GJØR SLIK AT DENNE OPERATOREN VELGER EN RANDOM VEHICLE_INDEX SOM IKKE ER BLITT SJEKKET, BRUK WHILE-LØKKE
+# HVIS BILEN HAR OVER ... I VEKT, SÅ SKAL DEN FJERNES CALLS IFRA
+# Change this operator such that it doesnt calculate all the calls and vehicle weights,
+# but maybe choose one vehicle randomly, and if it is full we will use it!
