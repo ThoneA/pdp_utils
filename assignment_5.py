@@ -173,7 +173,7 @@ def empty_reinsert(calls, prob, removed_sol):
 """
 This operator chooses the vehicle with the biggest weight, and then chooses
 a random number of calls between one and ten of the calls inside that vehicle. 
-"""
+# """
 def weighted_removal(prob, sol, reinsert): 
     new_sol = sol.copy()
     vehicle_ranges = zero_pos(sol)
@@ -228,7 +228,7 @@ def weighted_removal(prob, sol, reinsert):
     return new_sol
 
 """
-This operator randomly chooses between 2 and 10 calls depending on the size of the file.
+This operator randomly chooses between 1 and 10 calls depending on the size of the file.
 Then inserst the calls back into the solution by using a easy_shuffle_reinsert.
 """
 def random_removal_1(prob, sol, reinsert):
@@ -409,8 +409,193 @@ def OP8(prob, sol):
 def OP9(prob, sol):
     return dummy_removal(prob, sol, empty_reinsert) # 35_calls, 40%
 
+# def OP1(prob, sol): 
+#      new_sol = sol.copy()
+#      vehicle_ranges = zero_pos(sol)
+#      biggest_weight = 0
+#      calls_to_reinsert = [] 
+#      calls = prob['n_calls']
+ 
+#      for vehicle_index, (start, end) in enumerate(vehicle_ranges):      
+#          vehicle_calls = new_sol[start:end]
+#          unique_calls = set(vehicle_calls)
+#          unique_calls.discard(0)
+ 
+#          if not unique_calls:
+#              continue
+ 
+#          calls_list = list(unique_calls)
+#          call_indices = np.array([x - 1 for x in calls_list if x - 1 < calls])
+ 
+#          if len(call_indices) > 0:
+#              vehicle_weight = np.sum(prob['Cargo'][call_indices, 2])
+ 
+#              if vehicle_weight > biggest_weight:
+#                  biggest_weight = vehicle_weight
+#                  calls_to_reinsert = calls_list
+ 
+#      if calls_to_reinsert:
+#         if len(calls_to_reinsert) < 10:
+#             num_to_select = np.random.randint(1, len(calls_to_reinsert) + 1)
+#         else:
+#             num_to_select = np.random.randint(1, 10)
 
-  
+#         selected_calls = np.random.choice(calls_to_reinsert, num_to_select, replace=False)
+
+#         # Remove selected calls
+#         new_sol = [x for x in new_sol if x not in selected_calls]
+#         # new_sol = easy_reinsert(selected_calls, prob, new_sol)
+        
+#         x = "1234"
+#         chosen_reinsertion = random.choice(x)
+        
+#         if chosen_reinsertion == "1":
+#             new_sol = random_reinsert(selected_calls, prob, new_sol)
+#         elif chosen_reinsertion == "2":
+#             new_sol = easy_reinsert(selected_calls, prob, new_sol)
+#         elif chosen_reinsertion == "3":
+#             new_sol = easy_shuffle_reinsert(selected_calls, prob, new_sol)
+#         elif chosen_reinsertion == "4":
+#             new_sol = soft_greedy_reinsert(selected_calls, prob, new_sol)
+    
+#         return new_sol
+
+# """
+# This operator randomly chooses between 2 and 10 calls depending on the size of the file.
+# Then inserst the calls back into the solution by using a easy_shuffle_reinsert.
+# """
+# def OP2(prob, sol):
+#     new_sol = sol.copy()
+#     calls = prob['n_calls']
+#     calls_to_reinsert = []
+
+#     # Choose a random number between 1 and 10
+#     if calls < 10:
+#         calls_n = np.random.randint(1, calls + 1)
+#     else:
+#         calls_n = np.random.randint(2, 10)
+
+#     calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
+
+#     # Remove selected calls
+#     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
+
+#     # new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     x = "1234"
+#     chosen_reinsertion = random.choice(x)
+
+#     if chosen_reinsertion == "1":
+#         new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "2":
+#         new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "3":
+#         new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "4":
+#         new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    
+#     # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+        
+#     return new_sol
+
+# """
+# This operator chooses randomly a car that contains calls,
+# then it randomly chooses calls between 1 and 10.
+# """
+# def OP3(prob, sol):
+#     new_sol = sol.copy()
+#     vehicles = prob['n_vehicles']
+#     vehicle_ranges = zero_pos(sol)
+
+#     chosen_vehicle_index = np.random.randint(0, vehicles + 1)
+
+#     while vehicle_ranges[chosen_vehicle_index][0] == vehicle_ranges[chosen_vehicle_index][1]:
+#         chosen_vehicle_index = np.random.randint(0, vehicles + 1)
+
+#     start, end = vehicle_ranges[chosen_vehicle_index]
+
+#     vehicle_calls = new_sol[start:end]
+#     unique_calls = set(vehicle_calls)
+#     unique_calls.discard(0)    
+#     calls_list = list(unique_calls)
+
+#     if len(calls_list) < 10:
+#         calls_n = np.random.randint(1, len(calls_list) + 1)
+#     elif len(calls_list) >= 10:
+#         calls_n = np.random.randint(2, 10)
+
+#     calls_to_reinsert = []
+#     while calls_n > 0:
+#         call = np.random.choice(calls_list)
+#         calls_list.remove(call)
+#         calls_n -= 1
+#         new_sol.remove(call)
+#         new_sol.remove(call)
+#         calls_to_reinsert.append(call)
+
+#     # new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
+#     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     x = "1234"
+#     chosen_reinsertion = random.choice(x)
+    
+#     if chosen_reinsertion == "1":
+#         new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "2":
+#         new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "3":
+#         new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "4":
+#         new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    
+#     # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+
+#     return new_sol
+
+# """
+# This operator checks if there are any calls in the dummy that can be inserted into any of the vehicles
+# """
+# def OP4(prob, sol):
+#     new_sol = sol.copy()
+#     vehicle_ranges = zero_pos(new_sol)
+    
+#     vehicle_index, (start, end) = list(enumerate(vehicle_ranges))[-1]
+#     vehicle_calls = new_sol[start:end]
+#     unique_calls = set(vehicle_calls)
+#     unique_calls.discard(0)
+#     calls_list = list(unique_calls)
+    
+#     if end > start:
+#         if len(calls_list) < 10:
+#             calls_n = np.random.randint(1, len(calls_list) + 1)
+#         elif len(calls_list) >= 10:
+#             calls_n = np.random.randint(2, 10)
+            
+#     calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)  
+    
+#     # Remove selected calls
+#     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
+    
+#     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     x = "1234"
+#     chosen_reinsertion = random.choice(x)
+    
+#     if chosen_reinsertion == "1":
+#         new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "2":
+#         new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "3":
+#         new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "4":
+#         new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+    
+#     # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    
+#     return new_sol  
+    
+
+        
 
 def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
     best_sol = initial_sol.copy()
@@ -813,7 +998,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100):
     
             
         
-    
+
 
 
 
