@@ -5,15 +5,15 @@ from pdp_utils.operators import *
 import traceback
 
 files = [
-        # 'Call_7_Vehicle_3.txt', 
-        #   'Call_300_Vehicle_90.txt',   
-        #   'Call_130_Vehicle_40.txt',
-          'Call_80_Vehicle_20.txt',
+        'Call_7_Vehicle_3.txt', 
+        # 'Call_18_Vehicle_5.txt',
         #   'Call_35_Vehicle_7.txt',
-        #   'Call_18_Vehicle_5.txt'
+        #   'Call_80_Vehicle_20.txt',
+        #   'Call_130_Vehicle_40.txt',
+        #   'Call_300_Vehicle_90.txt',  
         ]
 
-num_runs = 10
+num_runs = 1
 results = {}
 
 
@@ -25,14 +25,14 @@ for file in files:
     best_obj = float('inf')
     start_time = time.time()
     initial_sol = initial_solution(prob)
+    best_history = None
     
     for run in range(num_runs):
         print(f"Run {run}")
         try:
-            sol, op_stats = general_adaptive_metaheuristics(prob, initial_sol)
+            sol, op_stats, history = general_adaptive_metaheuristics(prob, initial_sol)
             cost = cost_function(sol, prob)
-            feasiblity, c = feasibility_check(sol, prob)
-            
+            feasiblity, c = feasibility_check(sol, prob)   
             if feasiblity:
                 objective_values.append(cost)
 
@@ -40,6 +40,7 @@ for file in files:
                     best_obj = cost
                     best_sol = sol
                     best_op_stats = op_stats
+                    best_history = history
             else:
                 print("Infeasible solution")
         except Exception as e:
@@ -76,6 +77,7 @@ for file in files:
         }
     
 for file, stats in results.items():
+    # plot_optimization_history(history)
     print(f"\nResults for {file}:")
     for key, value in stats.items():
         if key == 'Best sol':
