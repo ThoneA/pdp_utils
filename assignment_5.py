@@ -624,6 +624,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
     best_sol = initial_sol.copy()
     incumbent = initial_sol.copy()
     T_f = 0.1  
+    total_iterations = 9900
     
     operators = [
         {"name": "P1", "function": OP1},
@@ -720,11 +721,11 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
     else:
         T_0 = 1.0  
         
-    alpha = (T_f / T_0) ** (1/9900) 
+    alpha = (T_f / T_0) ** (1/total_iterations) 
     T = T_0
     
     # Main phase
-    for i in range(1, 9900):
+    for i in range(1, total_iterations):
         current_iteration = 100 + i  # Offset by warm-up phase
         
         # Checking if we need to escape local optimum
@@ -804,6 +805,12 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
         # print(f"incumbent: {incumbent}, new: {incumbent_cost}, delta_e: {delta_E}")
         # print(f"new_sol: {new_sol}, new: {new_cost}, delta_e: {delta_E}")
         # print(f"delta_e: {delta_E}")
+        
+        g = i
+        G = total_iterations
+        D = 0.2 * ((G-g)/G) * best_cost
+        max_acceptable_cost = best_cost + D
+        
         if feasibility and delta_E < 0:
             incumbent = new_sol.copy()
             incumbent_cost = new_cost
@@ -825,10 +832,10 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
             else:
                 iterations_since_best += 1
                 
-        elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
+        # elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
+        elif feasibility and (new_cost <= max_acceptable_cost):
             incumbent = new_sol.copy()
             incumbent_cost = new_cost
-            
             iterations_since_best += 1
             
             # Feasible but not better: +1 point
