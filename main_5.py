@@ -6,14 +6,14 @@ import traceback
 
 files = [
         # 'Call_7_Vehicle_3.txt', 
-        'Call_18_Vehicle_5.txt',
-        #   'Call_35_Vehicle_7.txt',
+        # 'Call_18_Vehicle_5.txt',
+          'Call_35_Vehicle_7.txt',
         #   'Call_80_Vehicle_20.txt',
         #   'Call_130_Vehicle_40.txt',
         #   'Call_300_Vehicle_90.txt',  
         ]
 
-num_runs = 10
+num_runs = 1
 results = {}
 
 
@@ -25,7 +25,7 @@ for file in files:
     best_obj = float('inf')
     start_time = time.time()
     initial_sol = initial_solution(prob)
-    best_history = None
+    all_histories = []
     
     for run in range(num_runs):
         print(f"Run {run}")
@@ -35,22 +35,25 @@ for file in files:
             feasiblity, c = feasibility_check(sol, prob)   
             if feasiblity:
                 objective_values.append(cost)
+                all_histories.append(history)
 
                 if cost < best_obj:
                     best_obj = cost
                     best_sol = sol
                     best_op_stats = op_stats
-                    best_history = history
             else:
                 print("Infeasible solution")
         except Exception as e:
             # traceback.print_exc() 
             print(f"Error: {e}")
-    
+        
+    if all_histories:
+        plot_combined_optimization_history(all_histories, file)
         
     end_time = time.time()
     running_time = end_time - start_time
     average_run_time = running_time / num_runs
+
     
     if objective_values:
         average_obj = sum(objective_values) / len(objective_values)
@@ -77,7 +80,6 @@ for file in files:
         }
     
 for file, stats in results.items():
-    # plot_optimization_history(history)
     print(f"\nResults for {file}:")
     for key, value in stats.items():
         if key == 'Best sol':

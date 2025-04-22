@@ -266,5 +266,18 @@
 # print(OP2(prob, initial_sol, greedy_reinsert))
 
 
-if not False:
-    print('hei')
+# if not False:
+#     print('hei')
+
+import numpy as np
+
+possible_vehicles = [1, 6, 7]
+
+selected_vehicles = np.random.choice(possible_vehicles, size = 3,  replace=False)
+
+print(selected_vehicles)
+
+selected_vehicles = list(selected_vehicles)
+
+for i in selected_vehicles:
+    print(i)

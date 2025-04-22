@@ -31,7 +31,7 @@ def soft_greedy_reinsert(calls, prob, removed_sol):
     # print(f" calls to reinsert: {calls}, removed_solution {removed_sol}")
     
     
-    for call in calls:
+    for call in calls:        
         selected_vehicle = np.random.randint(0, vehicles_n)
         while prob['VesselCargo'][selected_vehicle][call - 1] == 0:
             selected_vehicle = np.random.randint(0, vehicles_n)
@@ -70,18 +70,81 @@ def soft_greedy_reinsert(calls, prob, removed_sol):
             best_sol.insert(len(best_sol), call)
             best_sol.insert(len(best_sol), call)           
         
-        # if new_best_cost == 1e12:
-        #     best_sol.insert(len(best_sol), call)
-        #     best_sol.insert(len(best_sol), call)
-        
-        # else:
-        #     best_sol = new_best_sol
-
-        
-    
     # print(f" new solution: {new_best_sol}")
     return best_sol
               
+"""
+This reinsertion function chooses a random vehicle, then finds the best position to place the pickup and delivery for all calls
+"""
+def soft_greedy_reinsert_2(calls, prob, removed_sol):
+    
+    best_sol = removed_sol
+    vehicle_ranges = zero_pos(removed_sol)
+    vehicles_n = prob['n_vehicles']
+    # print(f"soft greedy gets:")
+    # print(f" calls to reinsert: {calls}, removed_solution {removed_sol}")
+    
+    
+    for call in calls:
+        # Choose 3 different vehicles to find the best posision
+        # Sjekk hvor mange vehicles som kan ta gitt call, hvis det er 3 eller mer så velg 3 random
+        possible_vehicles = np.where(prob['VesselCargo'][:, call - 1] == 1)[0]
+        if len(possible_vehicles) >= 3:
+            selected_vehicle = np.random.choice(possible_vehicles, size=3, replace=False)
+        else:
+            selected_vehicle = np.random.choice(possible_vehicles, replace=False)
+          
+        # selected_vehicle = np.random.randint(0, vehicles_n)
+        # while prob['VesselCargo'][selected_vehicle][call - 1] == 0:
+        #     selected_vehicle = np.random.randint(0, vehicles_n)
+        
+        # print(f"index of vehicle: {selected_vehicle}")
+        new_best_sol = best_sol.copy()
+        new_best_cost = 1e12
+        if isinstance(selected_vehicle, np.int64):
+            selected_vehicle = [selected_vehicle]
+        else:
+            selected_vehicle = list(selected_vehicle)
+        
+        for vehicle in selected_vehicle:
+            start, end = list(vehicle_ranges)[vehicle]
+            
+        
+        # start, end = list(vehicle_ranges)[selected_vehicle]
+        # new_best_sol = best_sol.copy()
+        # new_best_cost = 1e12
+        
+ 
+        # PICKUP
+            for p_pos in range(start, end + 1):
+                temp_p_sol = best_sol.copy()
+                temp_p_sol.insert(p_pos, call)
+                
+                # DELIVERY
+                for d_pos in range(p_pos + 1, end + 2):
+                    temp_d_sol = temp_p_sol.copy()
+                    temp_d_sol.insert(d_pos, call)
+                    
+                    feasibility, _ = feasibility_check(temp_d_sol, prob)
+                    
+                    if feasibility:
+                        temp_cost = cost_function(temp_d_sol, prob)
+                        
+                        if temp_cost < new_best_cost:
+                            new_best_sol = temp_d_sol
+                            new_best_cost = temp_cost
+            
+        if call in new_best_sol:
+            best_sol = new_best_sol.copy()
+
+        # Dummy reinsertion
+        else:
+            best_sol.insert(len(best_sol), call)
+            best_sol.insert(len(best_sol), call)           
+            
+    # print(f" new solution: {new_best_sol}")
+    return best_sol              
+
 """
 This reinsertion function, chooses a vehicle randomly and then adds the calls one by one into random vehicles
 """
@@ -427,7 +490,40 @@ def dummy_removal(prob, sol, reinsert):
 #     return dummy_removal(prob, sol, empty_reinsert) # 35_calls, 40%
 
 def OP1(prob, sol):
-    return random_removal_1(prob, sol, soft_greedy_reinsert)
+    new_sol =  random_removal_1(prob, sol, soft_greedy_reinsert_2)
+    # for i in range(10):
+    #     if new_sol != sol:
+    #         break
+    #     new_sol = random_removal_1(prob, sol, soft_greedy_reinsert_2)
+        
+    return new_sol
+
+def OP2(prob, sol):
+    new_sol = random_removal_2(prob, sol, soft_greedy_reinsert_2)
+    # for i in range(10):
+    #     if new_sol != sol:
+    #         break
+    #     new_sol = random_removal_2(prob, sol, soft_greedy_reinsert_2)
+    
+    return new_sol
+
+def OP3(prob, sol):
+    new_sol = dummy_removal(prob, sol, soft_greedy_reinsert_2)
+    # for i in range(10):
+    #     if new_sol != sol:
+    #         break
+    #     new_sol = dummy_removal(prob, sol, soft_greedy_reinsert_2)
+    return new_sol
+
+def OP4(prob, sol):
+    new_sol = weighted_removal(prob, sol, soft_greedy_reinsert_2)
+    # for i in range(10):
+    #     if new_sol != sol:
+    #         break
+    #     new_sol = weighted_removal(prob, sol, soft_greedy_reinsert_2)
+    return new_sol
+
+
 
 # def OP1(prob, sol): 
 #      new_sol = sol.copy()
@@ -483,136 +579,136 @@ def OP1(prob, sol):
 """
 This operator randomly chooses between 2 and 10 calls depending on the size of the file.
 Then inserst the calls back into the solution by using a easy_shuffle_reinsert.
-"""
-def OP2(prob, sol):
-    new_sol = sol.copy()
-    calls = prob['n_calls']
-    calls_to_reinsert = []
+# """
+# def OP2(prob, sol):
+#     new_sol = sol.copy()
+#     calls = prob['n_calls']
+#     calls_to_reinsert = []
 
-    # Choose a random number between 1 and 10
-    if calls < 10:
-        calls_n = np.random.randint(1, calls + 1)
-    else:
-        calls_n = np.random.randint(2, 10)
+#     # Choose a random number between 1 and 10
+#     if calls < 10:
+#         calls_n = np.random.randint(1, calls + 1)
+#     else:
+#         calls_n = np.random.randint(2, 10)
 
-    calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
+#     calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
 
-    # Remove selected calls
-    new_sol = [x for x in new_sol if x not in calls_to_reinsert]
+#     # Remove selected calls
+#     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
 
-    # new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
-    # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    x = "1234"
-    chosen_reinsertion = random.choice(x)
+#     # new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     x = "1234"
+#     chosen_reinsertion = random.choice(x)
 
-    if chosen_reinsertion == "1":
-        new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "2":
-        new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "3":
-        new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "4":
-        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+#     if chosen_reinsertion == "1":
+#         new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "2":
+#         new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "3":
+#         new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "4":
+#         new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
     
-    # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
         
-    return new_sol
+#     return new_sol
 
 """
 This operator chooses randomly a car that contains calls,
 then it randomly chooses calls between 1 and 10.
 """
-def OP3(prob, sol):
-    new_sol = sol.copy()
-    vehicles = prob['n_vehicles']
-    vehicle_ranges = zero_pos(sol)
+# def OP3(prob, sol):
+#     new_sol = sol.copy()
+#     vehicles = prob['n_vehicles']
+#     vehicle_ranges = zero_pos(sol)
 
-    chosen_vehicle_index = np.random.randint(0, vehicles + 1)
+#     chosen_vehicle_index = np.random.randint(0, vehicles + 1)
 
-    while vehicle_ranges[chosen_vehicle_index][0] == vehicle_ranges[chosen_vehicle_index][1]:
-        chosen_vehicle_index = np.random.randint(0, vehicles + 1)
+#     while vehicle_ranges[chosen_vehicle_index][0] == vehicle_ranges[chosen_vehicle_index][1]:
+#         chosen_vehicle_index = np.random.randint(0, vehicles + 1)
 
-    start, end = vehicle_ranges[chosen_vehicle_index]
+#     start, end = vehicle_ranges[chosen_vehicle_index]
 
-    vehicle_calls = new_sol[start:end]
-    unique_calls = set(vehicle_calls)
-    unique_calls.discard(0)    
-    calls_list = list(unique_calls)
+#     vehicle_calls = new_sol[start:end]
+#     unique_calls = set(vehicle_calls)
+#     unique_calls.discard(0)    
+#     calls_list = list(unique_calls)
 
-    if len(calls_list) < 10:
-        calls_n = np.random.randint(1, len(calls_list) + 1)
-    elif len(calls_list) >= 10:
-        calls_n = np.random.randint(2, 10)
+#     if len(calls_list) < 10:
+#         calls_n = np.random.randint(1, len(calls_list) + 1)
+#     elif len(calls_list) >= 10:
+#         calls_n = np.random.randint(2, 10)
 
-    calls_to_reinsert = []
-    while calls_n > 0:
-        call = np.random.choice(calls_list)
-        calls_list.remove(call)
-        calls_n -= 1
-        new_sol.remove(call)
-        new_sol.remove(call)
-        calls_to_reinsert.append(call)
+#     calls_to_reinsert = []
+#     while calls_n > 0:
+#         call = np.random.choice(calls_list)
+#         calls_list.remove(call)
+#         calls_n -= 1
+#         new_sol.remove(call)
+#         new_sol.remove(call)
+#         calls_to_reinsert.append(call)
 
-    # new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
-    new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    # new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    x = "1234"
-    chosen_reinsertion = random.choice(x)
+#     # new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
+#     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     x = "1234"
+#     chosen_reinsertion = random.choice(x)
     
-    if chosen_reinsertion == "1":
-        new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "2":
-        new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "3":
-        new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "4":
-        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+#     if chosen_reinsertion == "1":
+#         new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "2":
+#         new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "3":
+#         new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "4":
+#         new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
     
-    # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
 
-    return new_sol
+#     return new_sol
 
 """
 This operator checks if there are any calls in the dummy that can be inserted into any of the vehicles
 """
-def OP4(prob, sol):
-    new_sol = sol.copy()
-    vehicle_ranges = zero_pos(new_sol)
+# def OP4(prob, sol):
+#     new_sol = sol.copy()
+#     vehicle_ranges = zero_pos(new_sol)
     
-    vehicle_index, (start, end) = list(enumerate(vehicle_ranges))[-1]
-    vehicle_calls = new_sol[start:end]
-    unique_calls = set(vehicle_calls)
-    unique_calls.discard(0)
-    calls_list = list(unique_calls)
+#     vehicle_index, (start, end) = list(enumerate(vehicle_ranges))[-1]
+#     vehicle_calls = new_sol[start:end]
+#     unique_calls = set(vehicle_calls)
+#     unique_calls.discard(0)
+#     calls_list = list(unique_calls)
     
-    if end > start:
-        if len(calls_list) < 10:
-            calls_n = np.random.randint(1, len(calls_list) + 1)
-        elif len(calls_list) >= 10:
-            calls_n = np.random.randint(2, 10)
+#     if end > start:
+#         if len(calls_list) < 10:
+#             calls_n = np.random.randint(1, len(calls_list) + 1)
+#         elif len(calls_list) >= 10:
+#             calls_n = np.random.randint(2, 10)
             
-    calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)  
+#     calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)  
     
-    # Remove selected calls
-    new_sol = [x for x in new_sol if x not in calls_to_reinsert]
+#     # Remove selected calls
+#     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
     
-    # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    x = "1234"
-    chosen_reinsertion = random.choice(x)
+#     # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     x = "1234"
+#     chosen_reinsertion = random.choice(x)
     
-    if chosen_reinsertion == "1":
-        new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "2":
-        new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "3":
-        new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    elif chosen_reinsertion == "4":
-        new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
+#     if chosen_reinsertion == "1":
+#         new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "2":
+#         new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "3":
+#         new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
+#     elif chosen_reinsertion == "4":
+#         new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
     
-    # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+#     # new_sol = reinsert(calls_to_reinsert, prob, new_sol)
     
-    return new_sol  
+#     return new_sol  
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -625,12 +721,13 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
     incumbent = initial_sol.copy()
     T_f = 0.1  
     total_iterations = 9900
+    n_calls = prob['n_calls']
     
     operators = [
         {"name": "P1", "function": OP1},
-        # {"name": "P2", "function": OP2},
-        # {"name": "P3", "function": OP3},
-        # {"name": "P4", "function": OP4},
+        {"name": "P2", "function": OP2},
+        {"name": "P3", "function": OP3},
+        {"name": "P4", "function": OP4}
         # {"name": "P5", "function": OP5},
         # {"name": "P6", "function": OP6},
         # {"name": "P7", "function": OP7},
@@ -647,7 +744,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
         }
     
     iterations_since_best = 0
-    escape_condition = 1000  # After this many iterations without improvement, apply escape
+    # escape_condition = 1000  # After this many iterations without improvement, apply escape
 
     incumbent_cost = cost_function(incumbent, prob)
     best_cost = incumbent_cost
@@ -728,20 +825,56 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
     for i in range(1, total_iterations):
         current_iteration = 100 + i  # Offset by warm-up phase
         
-        # Checking if we need to escape local optimum
-        if iterations_since_best > escape_condition:
-            vehicle_ranges = zero_pos(incumbent)
+        if iterations_since_best == 500:
+            print(f'No improvement for {iterations_since_best} iterations. Current best cost: {best_cost}, and current cost: {incumbent_cost}')
             
-            for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-                if end > start:
-                    segment = list(incumbent[start:end])
-                    if len(segment) > 2:
-                        random.shuffle(segment)
-                        incumbent[start:end] = segment
-                    break
+            # accepted_solutions = 0
+            
+            # while accepted_solutions < 20:
+                # probabilities = [op_stats[op["name"]]["probability"] for op in operators]
+                # chosen_op_idx = random.choices(range(len(operators)), weights=probabilities, k=1)[0]
+                # op1 = operators['P1']
                 
+                # op_stats[chosen_op["name"]]["counter"] += 1
+                # new_sol = op1["function"](prob, incumbent)
+            for i in range(n_calls * 3): # KANSKJE HOPPE LITT LENGRE ENN 20?
+                if i == 0:
+                    print(f"Trying to escape local optimum...")
+                new_sol = OP1(prob, incumbent)
+                
+                feasibility, _ = feasibility_check(new_sol, prob)
+                if not feasibility:
+                    continue
+                
+                new_cost = cost_function(new_sol, prob)
+                delta_E = new_cost - incumbent_cost
+                
+                incumbent = new_sol.copy()
+                incumbent_cost = new_cost
+                # accepted_solutions += 1
+                
+                if new_cost < best_cost:
+                    best_sol = new_sol.copy()
+                    best_cost = new_cost
+                    iterations_since_best = 0
+                    print(f"Found a better solution: {best_cost} at iteration {current_iteration}")
+                    break
+        
             iterations_since_best = 0
-            incumbent_cost = cost_function(incumbent, prob)
+        # Checking if we need to escape local optimum
+        # if iterations_since_best > escape_condition:
+        #     vehicle_ranges = zero_pos(incumbent)
+            
+        #     for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+        #         if end > start:
+        #             segment = list(incumbent[start:end])
+        #             if len(segment) > 2:
+        #                 random.shuffle(segment)
+        #                 incumbent[start:end] = segment
+        #             break
+                
+        #     iterations_since_best = 0
+        #     incumbent_cost = cost_function(incumbent, prob)
             
         # Updating operator probabilities periodically
         if i % segment_size == 0 and i > 0:
@@ -846,68 +979,171 @@ def general_adaptive_metaheuristics(prob, initial_sol, segment_size=100, plot_re
 
         T = alpha * T
     
-    # Create plots if requested
-    if plot_results:
-        plot_optimization_history(history)
+    # # Create plots if requested
+    # if plot_results:
+    #     plot_optimization_history(history)
     
    
     
     return best_sol, op_stats, history
 
 
-def plot_optimization_history(history):
+def plot_combined_optimization_history(histories, file_name):
     """
-    Create plots from the optimization history.
+    Create plots combining histories from multiple runs.
+    
+    Parameters:
+    - histories: List of history dictionaries from different runs
+    - file_name: Name of the problem file for the plot title
     """
     plt.figure(figsize=(15, 10))
     
-    # Plot 1: Best solution cost over iterations
+    # Plot 1: Best solution cost over iterations for all runs
     plt.subplot(2, 1, 1)
-    plt.plot(history["iterations"], history["best_costs"], 'b-')
-    plt.scatter(history["iterations"], history["best_costs"], c='r', s=30)
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(histories)))
     
-    # Add vertical lines for segment boundaries
-    for segment in history["segment_boundaries"]:
-        plt.axvline(x=segment, color='gray', linestyle='--', alpha=0.7)
-    
-    plt.title("Best Solution Cost Over Iterations")
+    for i, history in enumerate(histories):
+        plt.plot(history["iterations"], history["best_costs"], 
+                 color=colors[i], alpha=0.7, label=f"Run {i+1}")
+        
+    plt.title(f"Best Solution Cost Over Iterations for {file_name}")
     plt.xlabel("Iteration")
     plt.ylabel("Best Cost")
+    plt.legend()
     plt.grid(True)
     
-    # Plot 2: Operator probabilities over segments
+    # Plot 2: Average operator probabilities over segments
     plt.subplot(2, 1, 2)
     
-    # One line per operator
-    segment_points = list(range(0, len(history["segment_boundaries"])))
+    # Calculate average probabilities across all runs
+    all_op_names = set()
+    for history in histories:
+        all_op_names.update(history["operator_probs"].keys())
     
-    for op_name in history["operator_probs"]:
-        if history["operator_probs"][op_name]:  # Check if we have data
-            plt.plot(segment_points, history["operator_probs"][op_name], label=op_name)
+    # Find the maximum segment length
+    max_segments = max([len(next(iter(h["operator_probs"].values()))) for h in histories if h["operator_probs"]])
+    segment_points = list(range(max_segments))
     
-    plt.title("Operator Probabilities Over Segments")
+    # For each operator, calculate the average probability over all runs
+    avg_probabilities = {op_name: [] for op_name in all_op_names}
+    
+    for segment_idx in range(max_segments):
+        for op_name in all_op_names:
+            segment_values = []
+            for history in histories:
+                if op_name in history["operator_probs"] and segment_idx < len(history["operator_probs"][op_name]):
+                    segment_values.append(history["operator_probs"][op_name][segment_idx])
+            
+            if segment_values:
+                avg_probabilities[op_name].append(sum(segment_values) / len(segment_values))
+            else:
+                # If no data for this segment, use previous value or 0
+                prev_value = avg_probabilities[op_name][-1] if avg_probabilities[op_name] else 0
+                avg_probabilities[op_name].append(prev_value)
+    
+    # Plot average probabilities
+    for op_name, probs in avg_probabilities.items():
+        if probs:  # Check if we have data
+            plt.plot(segment_points[:len(probs)], probs, label=f"Avg {op_name}")
+    
+    plt.title(f"Average Operator Probabilities Over Segments for {file_name}")
     plt.xlabel("Segment")
     plt.ylabel("Probability")
     plt.legend()
     plt.grid(True)
     
     plt.tight_layout()
-    plt.savefig("optimization_history.png")
+    plt.savefig(f"optimization_history_{file_name.replace('.txt', '')}.png")
     
-    # Create a separate plot for operator scores
+    # Create a separate plot for average operator scores
     plt.figure(figsize=(15, 6))
-    segment_points = list(range(0, len(history["segment_boundaries"])))
     
-    for op_name in history["operator_scores"]:
-        if history["operator_scores"][op_name]:  # Check if we have data
-            plt.plot(segment_points, history["operator_scores"][op_name], label=op_name)
+    # Calculate average scores across all runs
+    avg_scores = {op_name: [] for op_name in all_op_names}
     
-    plt.title("Operator Scores Over Segments")
+    for segment_idx in range(max_segments):
+        for op_name in all_op_names:
+            segment_values = []
+            for history in histories:
+                if op_name in history["operator_scores"] and segment_idx < len(history["operator_scores"][op_name]):
+                    segment_values.append(history["operator_scores"][op_name][segment_idx])
+            
+            if segment_values:
+                avg_scores[op_name].append(sum(segment_values) / len(segment_values))
+            else:
+                # If no data for this segment, use previous value or 0
+                prev_value = avg_scores[op_name][-1] if avg_scores[op_name] else 0
+                avg_scores[op_name].append(prev_value)
+    
+    # Plot average scores
+    for op_name, scores in avg_scores.items():
+        if scores:  # Check if we have data
+            plt.plot(segment_points[:len(scores)], scores, label=f"Avg {op_name}")
+    
+    plt.title(f"Average Operator Scores Over Segments for {file_name}")
     plt.xlabel("Segment")
     plt.ylabel("Score")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("operator_scores.png")
+    plt.savefig(f"operator_scores_{file_name.replace('.txt', '')}.png")
     
     plt.show()
+
+
+# def plot_optimization_history(history):
+#     """
+#     Create plots from the optimization history.
+#     """
+#     plt.figure(figsize=(15, 10))
+    
+#     # Plot 1: Best solution cost over iterations
+#     plt.subplot(2, 1, 1)
+#     plt.plot(history["iterations"], history["best_costs"], 'b-')
+#     plt.scatter(history["iterations"], history["best_costs"], c='r', s=30)
+    
+#     # Add vertical lines for segment boundaries
+#     for segment in history["segment_boundaries"]:
+#         plt.axvline(x=segment, color='gray', linestyle='--', alpha=0.7)
+    
+#     plt.title("Best Solution Cost Over Iterations")
+#     plt.xlabel("Iteration")
+#     plt.ylabel("Best Cost")
+#     plt.grid(True)
+    
+#     # Plot 2: Operator probabilities over segments
+#     plt.subplot(2, 1, 2)
+    
+#     # One line per operator
+#     segment_points = list(range(0, len(history["segment_boundaries"])))
+    
+#     for op_name in history["operator_probs"]:
+#         if history["operator_probs"][op_name]:  # Check if we have data
+#             plt.plot(segment_points, history["operator_probs"][op_name], label=op_name)
+    
+#     plt.title("Operator Probabilities Over Segments")
+#     plt.xlabel("Segment")
+#     plt.ylabel("Probability")
+#     plt.legend()
+#     plt.grid(True)
+    
+#     plt.tight_layout()
+#     plt.savefig("optimization_history.png")
+    
+#     # Create a separate plot for operator scores
+#     plt.figure(figsize=(15, 6))
+#     segment_points = list(range(0, len(history["segment_boundaries"])))
+    
+#     for op_name in history["operator_scores"]:
+#         if history["operator_scores"][op_name]:  # Check if we have data
+#             plt.plot(segment_points, history["operator_scores"][op_name], label=op_name)
+    
+#     plt.title("Operator Scores Over Segments")
+#     plt.xlabel("Segment")
+#     plt.ylabel("Score")
+#     plt.legend()
+#     plt.grid(True)
+#     plt.tight_layout()
+#     plt.savefig("operator_scores.png")
+    
+#     plt.show()
