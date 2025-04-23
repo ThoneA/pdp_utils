@@ -269,15 +269,70 @@
 # if not False:
 #     print('hei')
 
-import numpy as np
+# import numpy as np
 
-possible_vehicles = [1, 6, 7]
+# possible_vehicles = [1, 6, 7]
 
-selected_vehicles = np.random.choice(possible_vehicles, size = 3,  replace=False)
+# selected_vehicles = np.random.choice(possible_vehicles, size = 3,  replace=False)
 
-print(selected_vehicles)
+# print(selected_vehicles)
 
-selected_vehicles = list(selected_vehicles)
+# selected_vehicles = list(selected_vehicles)
 
-for i in selected_vehicles:
-    print(i)
+# for i in selected_vehicles:
+#     print(i)
+
+
+
+
+
+# new_cost = cost_function(new_sol, prob)
+# delta_E = new_cost - incumbent_cost
+# # print(f"incumbent: {incumbent}, new: {incumbent_cost}, delta_e: {delta_E}")
+# # print(f"new_sol: {new_sol}, new: {new_cost}, delta_e: {delta_E}")
+# # print(f"delta_e: {delta_E}")
+
+# g = i
+# G = total_iterations
+# D = 0.2 * ((G-g)/G) * best_cost
+# max_acceptable_cost = best_cost + D
+
+# if feasibility and delta_E < 0:
+#     incumbent = new_sol.copy()
+#     incumbent_cost = new_cost
+    
+#     # Better than incumbent: +2 points
+#     op_stats[chosen_op["name"]]["score"] += 2
+    
+#     if incumbent_cost < best_cost:
+#         best_sol = incumbent.copy()
+#         best_cost = incumbent_cost
+#         iterations_since_best = 0
+        
+#         # New best solution: +4 points
+#         op_stats[chosen_op["name"]]["score"] += 4
+        
+#         # Record the iteration where we found a better solution
+#         history["iterations"].append(current_iteration)
+#         history["best_costs"].append(best_cost)
+#     else:
+#         iterations_since_best += 1
+        
+# # elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
+# elif feasibility and (new_cost <= max_acceptable_cost):
+#     incumbent = new_sol.copy()
+#     incumbent_cost = new_cost
+#     iterations_since_best += 1
+    
+#     # Feasible but not better: +1 point
+#     op_stats[chosen_op["name"]]["score"] += 1
+        
+# else:
+    # iterations_since_best += 1
+    
+i = 0
+
+if i != 0 and i % 500 == 0:
+    print("True")
+else:
+    print("False")

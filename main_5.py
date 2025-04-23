@@ -5,9 +5,9 @@ from pdp_utils.operators import *
 import traceback
 
 files = [
-        # 'Call_7_Vehicle_3.txt', 
+        'Call_7_Vehicle_3.txt', 
         # 'Call_18_Vehicle_5.txt',
-          'Call_35_Vehicle_7.txt',
+        #   'Call_35_Vehicle_7.txt',
         #   'Call_80_Vehicle_20.txt',
         #   'Call_130_Vehicle_40.txt',
         #   'Call_300_Vehicle_90.txt',  
@@ -30,12 +30,13 @@ for file in files:
     for run in range(num_runs):
         print(f"Run {run}")
         try:
-            sol, op_stats, history = general_adaptive_metaheuristics(prob, initial_sol)
+            # sol, op_stats, history = general_adaptive_metaheuristics(prob, initial_sol)
+            sol, op_stats = general_adaptive_metaheuristics_2(prob, initial_sol)
             cost = cost_function(sol, prob)
             feasiblity, c = feasibility_check(sol, prob)   
             if feasiblity:
                 objective_values.append(cost)
-                all_histories.append(history)
+                # all_histories.append(history)
 
                 if cost < best_obj:
                     best_obj = cost
@@ -44,7 +45,7 @@ for file in files:
             else:
                 print("Infeasible solution")
         except Exception as e:
-            # traceback.print_exc() 
+            traceback.print_exc() 
             print(f"Error: {e}")
         
     if all_histories:
@@ -92,5 +93,5 @@ for file, stats in results.items():
     # Print operator statistics
     print("\nOperator Performance:")
     for op_name, stats in best_op_stats.items():
-        print(f"{op_name}: Score={stats['score']}, Used={stats['counter']}, Final Probability={stats['probability']:.4f}")
+        print(f"{op_name}: Score={stats['score']}, Final Probability={stats['probability']:.4f}")
                 
