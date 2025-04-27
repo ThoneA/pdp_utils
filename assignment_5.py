@@ -152,8 +152,9 @@ This reinsertion function checks the two best positions for the pickup and deliv
 """
 def k_regret(calls, prob, removed_sol, k = 2):
     best_sol = removed_sol
-
-    
+    feasibility_cache = {}
+    cost_cache = {}
+        
     for i in range(len(calls)):
         k_calls = []
         vehicle_ranges = zero_pos(best_sol)
@@ -177,10 +178,22 @@ def k_regret(calls, prob, removed_sol, k = 2):
                         temp_d_sol = temp_p_sol.copy()
                         temp_d_sol.insert(d_pos, call)
                         
-                        feasibility, _ = feasibility_check(temp_d_sol, prob)
+                        sol_key = tuple(temp_d_sol)
+                        
+                        if sol_key in feasibility_cache:
+                            feasibility, _ = feasibility_cache[sol_key]
+                        else:
+                            feasibility, _ = feasibility_check(temp_d_sol, prob)
+                            feasibility_cache[sol_key] = (feasibility, _)
                         
                         if feasibility:
-                            k_best_positions.append((temp_d_sol, cost_function(temp_d_sol, prob)))
+                            if sol_key in cost_cache:
+                                temp_cost = cost_cache[sol_key]
+                            else:
+                                temp_cost = cost_function(temp_d_sol, prob)
+                                cost_cache[sol_key] = temp_cost
+                                
+                            k_best_positions.append((temp_d_sol, temp_cost))
                     
                 # Choose the k best posistions according to the cost
             k_best_positions = sorted(k_best_positions, key=lambda x: x[1])[:k]  
@@ -224,11 +237,21 @@ def k_regret(calls, prob, removed_sol, k = 2):
                         temp_d_sol = temp_p_sol.copy()
                         temp_d_sol.insert(d_pos, call)
                         
-                        feasibility, _ = feasibility_check(temp_d_sol, prob)
+                        sol_key = tuple(temp_d_sol)
+                        
+                        if sol_key in feasibility_cache:
+                            feasibility, _ = feasibility_cache[sol_key]
+                        else:
+                            feasibility, _ = feasibility_check(temp_d_sol, prob)
+                            feasibility_cache[sol_key] = (feasibility, _)
                         
                         if feasibility:
-                            temp_cost = cost_function(temp_d_sol, prob)
-                            
+                            if sol_key in cost_cache:
+                                temp_cost = cost_cache[sol_key]
+                            else:
+                                temp_cost = cost_function(temp_d_sol, prob)
+                                cost_cache[sol_key] = temp_cost
+                                
                             if temp_cost < new_best_cost:
                                 new_best_sol = temp_d_sol
                                 new_best_cost = temp_cost
