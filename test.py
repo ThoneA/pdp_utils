@@ -330,9 +330,85 @@
 # else:
     # iterations_since_best += 1
     
-i = 0
+# i = 0
 
-if i != 0 and i % 500 == 0:
-    print("True")
-else:
-    print("False")
+# if i != 0 and i % 500 == 0:
+#     print("True")
+# else:
+#     print("False")
+
+
+
+
+
+              
+"""
+This reinsertion function chooses a random vehicle, then finds the best position to place the pickup and delivery for all calls
+"""
+def soft_greedy_reinsert_2(calls, prob, removed_sol):
+    best_sol = removed_sol
+    vehicle_ranges = zero_pos(removed_sol)
+    vehicles_n = prob['n_vehicles']
+    # print(f"soft greedy gets:")
+    # print(f" calls to reinsert: {calls}, removed_solution {removed_sol}")
+    
+    
+    for call in calls:
+        # Choose 3 different vehicles to find the best posision
+        # Sjekk hvor mange vehicles som kan ta gitt call, hvis det er 3 eller mer så velg 3 random
+        possible_vehicles = np.where(prob['VesselCargo'][:, call - 1] == 1)[0]
+        if len(possible_vehicles) >= 3:
+            selected_vehicle = np.random.choice(possible_vehicles, size=3, replace=False)
+        else:
+            selected_vehicle = np.random.choice(possible_vehicles, replace=False)
+          
+        # selected_vehicle = np.random.randint(0, vehicles_n)
+        # while prob['VesselCargo'][selected_vehicle][call - 1] == 0:
+        #     selected_vehicle = np.random.randint(0, vehicles_n)
+        
+        # print(f"index of vehicle: {selected_vehicle}")
+        new_best_sol = best_sol.copy()
+        new_best_cost = 1e12
+        if isinstance(selected_vehicle, np.int64):
+            selected_vehicle = [selected_vehicle]
+        else:
+            selected_vehicle = list(selected_vehicle)
+        
+        for vehicle in selected_vehicle:
+            start, end = list(vehicle_ranges)[vehicle]
+            
+        
+        # start, end = list(vehicle_ranges)[selected_vehicle]
+        # new_best_sol = best_sol.copy()
+        # new_best_cost = 1e12
+        
+ 
+        # PICKUP
+            for p_pos in range(start, end + 1):
+                temp_p_sol = best_sol.copy()
+                temp_p_sol.insert(p_pos, call)
+                
+                # DELIVERY
+                for d_pos in range(p_pos + 1, end + 2):
+                    temp_d_sol = temp_p_sol.copy()
+                    temp_d_sol.insert(d_pos, call)
+                    
+                    feasibility, _ = feasibility_check(temp_d_sol, prob)
+                    
+                    if feasibility:
+                        temp_cost = cost_function(temp_d_sol, prob)
+                        
+                        if temp_cost < new_best_cost:
+                            new_best_sol = temp_d_sol
+                            new_best_cost = temp_cost
+            
+        if call in new_best_sol:
+            best_sol = new_best_sol.copy()
+
+        # Dummy reinsertion
+        else:
+            best_sol.insert(len(best_sol), call)
+            best_sol.insert(len(best_sol), call)           
+            
+    # print(f" new solution: {new_best_sol}")
+    return best_sol              
