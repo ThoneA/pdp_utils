@@ -150,30 +150,160 @@ def soft_greedy_reinsert_2(calls, prob, removed_sol):
 """
 This reinsertion function checks the two best positions for the pickup and delivery of the calls, then it checks the difference between the cost of the two solution for every call, and then chooses the one that has the smallest difference.
 """
-def k_regret(calls, prob, removed_sol, k = 2):
+# def k_regret(calls, prob, removed_sol, k = 2):
+#     best_sol = removed_sol
+#     feasibility_cache = {}
+#     cost_cache = {}
+#     vehicles_n = prob['n_vehicles']
+#     remaining_calls = set(calls)
+        
+#     while remaining_calls:
+#         k_calls = []
+#         vehicle_ranges = zero_pos(best_sol)
+#         new_calls = []
+#         for call in calls:
+#             if call in remaining_calls:
+#                 new_calls.append(call)
+        
+#         for call in new_calls:
+#             if call not in remaining_calls:
+#                 continue
+#             k_best_positions = []
+#             for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+#                 if vehicle_index >= vehicles_n:
+#                     continue
+#                 # Check if the vehicle can take the call
+#                 print(f"call: {call}, vehicle_index: {vehicle_index}, start: {start}, end: {end}")
+#                 if prob['VesselCargo'][vehicle_index][call - 1] == 0:
+#                     continue
+                
+#                 # Find the k best positions for the pickup and delivery of the call
+                
+#                 # PICKUP
+#                 for p_pos in range(start, end + 1):
+#                     temp_p_sol = best_sol.copy()
+#                     temp_p_sol.insert(p_pos, call)
+                    
+#                     # DELIVERY
+#                     for d_pos in range(p_pos + 1, end + 2):
+#                         temp_d_sol = temp_p_sol.copy()
+#                         temp_d_sol.insert(d_pos, call)
+                        
+#                         sol_key = tuple(temp_d_sol)
+                        
+#                         if sol_key in feasibility_cache:
+#                             feasibility, _ = feasibility_cache[sol_key]
+#                         else:
+#                             feasibility, _ = feasibility_check(temp_d_sol, prob)
+#                             feasibility_cache[sol_key] = (feasibility, _)
+                        
+#                         if feasibility:
+#                             if sol_key in cost_cache:
+#                                 temp_cost = cost_cache[sol_key]
+#                             else:
+#                                 temp_cost = cost_function(temp_d_sol, prob)
+#                                 cost_cache[sol_key] = temp_cost
+                                
+#                             k_best_positions.append((temp_d_sol, temp_cost))
+                    
+#                 # Choose the k best posistions according to the cost
+#             k_best_positions = sorted(k_best_positions, key=lambda x: x[1])[:k]  
+#             k_calls.append(k_best_positions)
+        
+#         # Check the difference between the cost of the k solution for every call
+#         cost_for_calls_diffs = []
+#         for i in range(len(k_calls)):
+#             k_best_positions = k_calls[i]
+#             if len(k_best_positions) < k:
+#                 continue
+            
+#             # Calculate the difference between the cost of the two solution
+#             end = k-1
+#             cost_diff = abs(k_best_positions[0][1] - k_best_positions[end][1])
+            
+#             cost_for_calls_diffs.append((new_calls[i], cost_diff))
+            
+#         # Sort the calls according to the cost difference, from biggest to smallest
+#         cost_for_calls_diffs = sorted(cost_for_calls_diffs, key=lambda x: x[1], reverse=True)
+        
+#         if not cost_for_calls_diffs:
+#             break
+#         biggest_diff_call = cost_for_calls_diffs[0][0]
+#         new_best_sol = best_sol.copy()
+#         new_best_cost = 1e12
+        
+#         # Take the first call from the cost_for_calls_diffs list, and insert it into the best solution
+#         for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+#                 if vehicle_index >= vehicles_n:
+#                     continue
+#                 # Check if the vehicle can take the call
+#                 if prob['VesselCargo'][vehicle_index][biggest_diff_call - 1] == 0:
+#                     continue
+                
+#                 # Find the k best positions for the pickup and delivery of the call
+                
+#                 # PICKUP
+#                 for p_pos in range(start, end + 1):
+#                     temp_p_sol = best_sol.copy()
+#                     temp_p_sol.insert(p_pos, biggest_diff_call)
+                    
+#                     # DELIVERY
+#                     for d_pos in range(p_pos + 1, end + 2):
+#                         temp_d_sol = temp_p_sol.copy()
+#                         temp_d_sol.insert(d_pos, biggest_diff_call)
+                        
+#                         sol_key = tuple(temp_d_sol)
+                        
+#                         if sol_key in feasibility_cache:
+#                             feasibility, _ = feasibility_cache[sol_key]
+#                         else:
+#                             feasibility, _ = feasibility_check(temp_d_sol, prob)
+#                             feasibility_cache[sol_key] = (feasibility, _)
+                        
+#                         if feasibility:
+#                             if sol_key in cost_cache:
+#                                 temp_cost = cost_cache[sol_key]
+#                             else:
+#                                 temp_cost = cost_function(temp_d_sol, prob)
+#                                 cost_cache[sol_key] = temp_cost
+                                
+#                             if temp_cost < new_best_cost:
+#                                 new_best_sol = temp_d_sol
+#                                 new_best_cost = temp_cost
+                                
+#         best_sol = new_best_sol.copy()
+#         # calls = np.delete(calls, np.where(calls == biggest_diff_call))
+#         remaining_calls.remove(biggest_diff_call)
+    
+#     return best_sol         
+            
+def k_regret(calls, prob, removed_sol, k=2):
     best_sol = removed_sol
     feasibility_cache = {}
     cost_cache = {}
+    vehicles_n = prob['n_vehicles']
+    remaining_calls = set(calls)
         
-    for i in range(len(calls)):
+    while remaining_calls:
         k_calls = []
         vehicle_ranges = zero_pos(best_sol)
+        new_calls = [call for call in calls if call in remaining_calls]
         
-        for call in calls:
+        for call in new_calls:
+            # print(f"call: {call}, remaining_calls: {remaining_calls}")
             k_best_positions = []
             for vehicle_index, (start, end) in enumerate(vehicle_ranges):
+                if vehicle_index >= vehicles_n:
+                    continue
                 # Check if the vehicle can take the call
                 if prob['VesselCargo'][vehicle_index][call - 1] == 0:
                     continue
                 
                 # Find the k best positions for the pickup and delivery of the call
-                
-                # PICKUP
                 for p_pos in range(start, end + 1):
                     temp_p_sol = best_sol.copy()
                     temp_p_sol.insert(p_pos, call)
                     
-                    # DELIVERY
                     for d_pos in range(p_pos + 1, end + 2):
                         temp_d_sol = temp_p_sol.copy()
                         temp_d_sol.insert(d_pos, call)
@@ -187,6 +317,7 @@ def k_regret(calls, prob, removed_sol, k = 2):
                             feasibility_cache[sol_key] = (feasibility, _)
                         
                         if feasibility:
+                            # print(f"feasibility: {feasibility}, sol_key: {sol_key}")
                             if sol_key in cost_cache:
                                 temp_cost = cost_cache[sol_key]
                             else:
@@ -194,73 +325,84 @@ def k_regret(calls, prob, removed_sol, k = 2):
                                 cost_cache[sol_key] = temp_cost
                                 
                             k_best_positions.append((temp_d_sol, temp_cost))
-                    
-                # Choose the k best posistions according to the cost
-            k_best_positions = sorted(k_best_positions, key=lambda x: x[1])[:k]  
-            k_calls.append(k_best_positions)
+                            # print(f"k_best_positions: {k_best_positions}")
+            
+            # Keep only the k best positions
+            k_best_positions = sorted(k_best_positions, key=lambda x: x[1])[:k]
+            if len(k_best_positions) >= k:
+                k_calls.append(k_best_positions)
         
-        # Check the difference between the cost of the k solution for every call
+        # Check the difference between the cost of the k solutions for every call
         cost_for_calls_diffs = []
-        for i in range(len(k_calls)):
-            k_best_positions = k_calls[i]
+        for i, k_best_positions in enumerate(k_calls):
             if len(k_best_positions) < k:
                 continue
             
-            # Calculate the difference between the cost of the two solution
-            end = k-1
-            cost_diff = abs(k_best_positions[0][1] - k_best_positions[end][1])
-            
-            cost_for_calls_diffs.append((calls[i], cost_diff))
-            
+            # Calculate the difference between the cost of the two solutions
+            cost_diff = abs(k_best_positions[0][1] - k_best_positions[k - 1][1])
+            cost_for_calls_diffs.append((new_calls[i], cost_diff))
+        
         # Sort the calls according to the cost difference, from biggest to smallest
         cost_for_calls_diffs = sorted(cost_for_calls_diffs, key=lambda x: x[1], reverse=True)
         
-        call = cost_for_calls_diffs[0][0]
-        new_best_sol = best_sol.copy()
-        new_best_cost = 1e12
+        if not cost_for_calls_diffs:
+            break
         
-        # Take the first call from the cost_for_calls_diffs list, and insert it into the best solution
+        # Take the call with the biggest cost difference
+        biggest_diff_call = cost_for_calls_diffs[0][0]
+        new_best_sol = best_sol.copy()
+        new_best_cost = float('inf')
+        
+        # Insert the call into the best solution
         for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-                # Check if the vehicle can take the call
-                if prob['VesselCargo'][vehicle_index][call - 1] == 0:
-                    continue
-                
-                # Find the k best positions for the pickup and delivery of the call
-                
-                # PICKUP
-                for p_pos in range(start, end + 1):
-                    temp_p_sol = best_sol.copy()
-                    temp_p_sol.insert(p_pos, call)
-                    
-                    # DELIVERY
-                    for d_pos in range(p_pos + 1, end + 2):
-                        temp_d_sol = temp_p_sol.copy()
-                        temp_d_sol.insert(d_pos, call)
-                        
-                        sol_key = tuple(temp_d_sol)
-                        
-                        if sol_key in feasibility_cache:
-                            feasibility, _ = feasibility_cache[sol_key]
-                        else:
-                            feasibility, _ = feasibility_check(temp_d_sol, prob)
-                            feasibility_cache[sol_key] = (feasibility, _)
-                        
-                        if feasibility:
-                            if sol_key in cost_cache:
-                                temp_cost = cost_cache[sol_key]
-                            else:
-                                temp_cost = cost_function(temp_d_sol, prob)
-                                cost_cache[sol_key] = temp_cost
-                                
-                            if temp_cost < new_best_cost:
-                                new_best_sol = temp_d_sol
-                                new_best_cost = temp_cost
-                                
-        best_sol = new_best_sol.copy()
-        calls.remove(call)
-    
-    return best_sol         
+            if vehicle_index >= vehicles_n:
+                continue
+            if prob['VesselCargo'][vehicle_index][biggest_diff_call - 1] == 0:
+                continue
             
+            for p_pos in range(start, end + 1):
+                temp_p_sol = best_sol.copy()
+                temp_p_sol.insert(p_pos, biggest_diff_call)
+                
+                for d_pos in range(p_pos + 1, end + 2):
+                    temp_d_sol = temp_p_sol.copy()
+                    temp_d_sol.insert(d_pos, biggest_diff_call)
+                    
+                    sol_key = tuple(temp_d_sol)
+                    
+                    if sol_key in feasibility_cache:
+                        feasibility, _ = feasibility_cache[sol_key]
+                    else:
+                        feasibility, _ = feasibility_check(temp_d_sol, prob)
+                        feasibility_cache[sol_key] = (feasibility, _)
+                    
+                    if feasibility:
+                        if sol_key in cost_cache:
+                            temp_cost = cost_cache[sol_key]
+                        else:
+                            temp_cost = cost_function(temp_d_sol, prob)
+                            cost_cache[sol_key] = temp_cost
+                            
+                        if temp_cost < new_best_cost:
+                            new_best_sol = temp_d_sol
+                            new_best_cost = temp_cost
+        
+        if biggest_diff_call in new_best_sol:
+            best_sol = new_best_sol.copy()
+
+        # Dummy reinsertion
+        else:
+            best_sol.insert(len(best_sol), biggest_diff_call)
+            best_sol.insert(len(best_sol), biggest_diff_call)
+            
+        remaining_calls.remove(biggest_diff_call)
+    
+    if remaining_calls:
+        for call in remaining_calls:
+            best_sol.insert(len(best_sol), call)
+            best_sol.insert(len(best_sol), call)
+    
+    return best_sol
         
         
 
@@ -570,37 +712,43 @@ def dummy_removal(prob, sol, reinsert):
     return new_sol 
 
 def OP1(prob, sol):
-    new_sol =  random_removal_1(prob, sol, soft_greedy_reinsert_2)
+    # new_sol =  random_removal_1(prob, sol, soft_greedy_reinsert_2)
+    new_sol =  random_removal_1(prob, sol, k_regret)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
     #     new_sol = random_removal_1(prob, sol, soft_greedy_reinsert_2)
-    
+    # print(f"new_sol {new_sol}, used random removal 1")
     return new_sol
 
 def OP2(prob, sol):
-    new_sol = random_removal_2(prob, sol, soft_greedy_reinsert_2)
+    # new_sol = random_removal_2(prob, sol, soft_greedy_reinsert_2)
+    new_sol = random_removal_2(prob, sol, k_regret)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
     #     new_sol = random_removal_2(prob, sol, soft_greedy_reinsert_2)
-    
+    # print(f"new_sol {new_sol}, used random removal 2")
     return new_sol
 
 def OP3(prob, sol):
-    new_sol = dummy_removal(prob, sol, soft_greedy_reinsert_2)
+    # new_sol = dummy_removal(prob, sol, soft_greedy_reinsert_2)
+    new_sol = dummy_removal(prob, sol, k_regret)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
     #     new_sol = dummy_removal(prob, sol, soft_greedy_reinsert_2)
+    # print(f"new_sol {new_sol}, used dummy removal")
     return new_sol
 
 def OP4(prob, sol):
-    new_sol = weighted_removal(prob, sol, soft_greedy_reinsert_2)
+    # new_sol = weighted_removal(prob, sol, soft_greedy_reinsert_2)
+    new_sol = weighted_removal(prob, sol, k_regret)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
     #     new_sol = weighted_removal(prob, sol, soft_greedy_reinsert_2)
+    # print(f"new_sol {new_sol}, used weighted removal")
     return new_sol
 
 
@@ -700,7 +848,7 @@ def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True):
     
     # Hvilke stop condition skal jeg ha?
     for i in range(total_iterations):
-        print(f"Iteration {i}, Best Cost: {best_cost}")
+        # print(f"Iteration {i}, Best Cost: {best_cost}")
         if i % 1000 == 0:
             print(f"********Iteration {i}, Best Cost: {best_cost}********") 
         
