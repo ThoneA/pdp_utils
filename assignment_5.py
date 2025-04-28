@@ -11,13 +11,26 @@ This function returns the vehicle ranges
 def zero_pos(sol):
     sol_array = np.array(sol)
     zero_indices = np.where(sol_array == 0)[0]
-    vehicle_ranges = []
-    start_index = 0  
     
-    for zero in zero_indices:
-        vehicle_ranges.append((start_index, zero)) 
-        start_index = zero + 1
-    vehicle_ranges.append((start_index, len(sol) - 1))
+    # vehicle_ranges = []
+    # start_index = 0  
+    
+    # for zero in zero_indices:
+    #     vehicle_ranges.append((start_index, zero)) 
+    #     start_index = zero + 1
+    # vehicle_ranges.append((start_index, len(sol) - 1))
+    
+        # Create vehicle ranges directly as a numpy array
+    n_ranges = len(zero_indices) + 1
+    vehicle_ranges = np.zeros((n_ranges, 2), dtype=int)
+    
+    # Set start indices
+    vehicle_ranges[0, 0] = 0
+    vehicle_ranges[1:, 0] = zero_indices + 1
+    
+    # Set end indices
+    vehicle_ranges[:-1, 1] = zero_indices
+    vehicle_ranges[-1, 1] = len(sol) - 1
     
     return vehicle_ranges
 
@@ -139,10 +152,10 @@ def soft_greedy_reinsert_2(calls, prob, removed_sol):
 """
 This reinsertion function checks the two best positions for the pickup and delivery of the calls, then it checks the difference between the cost of the two solution for every call, and then chooses the one that has the biggest difference.
 """            
-def k_regret(calls, prob, removed_sol, k=2):
+def k_regret(calls, prob, removed_sol, feasibility_cache, cost_cache , k=2):
     best_sol = removed_sol
-    feasibility_cache = {}
-    cost_cache = {}
+    # feasibility_cache = {}
+    # cost_cache = {}
     vehicles_n = prob['n_vehicles']
     remaining_calls = set(calls)
         
@@ -163,19 +176,22 @@ def k_regret(calls, prob, removed_sol, k=2):
                 
                 # Find the k best positions for the pickup and delivery of the call
                 for p_pos in range(start, end + 1):
-                    temp_p_sol = best_sol.copy()
-                    temp_p_sol.insert(p_pos, call)
+                    # temp_p_sol = best_sol.copy()
+                    # temp_p_sol.insert(p_pos, call)
                     
                     for d_pos in range(p_pos + 1, end + 2):
-                        temp_d_sol = temp_p_sol.copy()
-                        temp_d_sol.insert(d_pos, call)
+                        # temp_d_sol = temp_p_sol.copy()
+                        # temp_d_sol.insert(d_pos, call)
+                        temp_sol = best_sol.copy()
+                        temp_sol.insert(p_pos, call)
+                        temp_sol.insert(d_pos, call)
                         
-                        sol_key = tuple(temp_d_sol)
+                        sol_key = tuple(temp_sol)
                         
                         if sol_key in feasibility_cache:
                             feasibility, _ = feasibility_cache[sol_key]
                         else:
-                            feasibility, _ = feasibility_check(temp_d_sol, prob)
+                            feasibility, _ = feasibility_check(temp_sol, prob)
                             feasibility_cache[sol_key] = (feasibility, _)
                         
                         if feasibility:
@@ -183,10 +199,10 @@ def k_regret(calls, prob, removed_sol, k=2):
                             if sol_key in cost_cache:
                                 temp_cost = cost_cache[sol_key]
                             else:
-                                temp_cost = cost_function(temp_d_sol, prob)
+                                temp_cost = cost_function(temp_sol, prob)
                                 cost_cache[sol_key] = temp_cost
                                 
-                            k_best_positions.append((temp_d_sol, temp_cost))
+                            k_best_positions.append((temp_sol, temp_cost))
                             # print(f"k_best_positions: {k_best_positions}")
             
             # Keep only the k best positions
@@ -223,30 +239,33 @@ def k_regret(calls, prob, removed_sol, k=2):
                 continue
             
             for p_pos in range(start, end + 1):
-                temp_p_sol = best_sol.copy()
-                temp_p_sol.insert(p_pos, biggest_diff_call)
+                # temp_p_sol = best_sol.copy()
+                # temp_p_sol.insert(p_pos, biggest_diff_call)
                 
                 for d_pos in range(p_pos + 1, end + 2):
-                    temp_d_sol = temp_p_sol.copy()
-                    temp_d_sol.insert(d_pos, biggest_diff_call)
+                    # temp_d_sol = temp_p_sol.copy()
+                    temp_sol = best_sol.copy()
+                    # temp_d_sol.insert(d_pos, biggest_diff_call)
+                    temp_sol.insert(p_pos, biggest_diff_call)
+                    temp_sol.insert(d_pos, biggest_diff_call)
                     
-                    sol_key = tuple(temp_d_sol)
+                    sol_key = tuple(temp_sol)
                     
                     if sol_key in feasibility_cache:
                         feasibility, _ = feasibility_cache[sol_key]
                     else:
-                        feasibility, _ = feasibility_check(temp_d_sol, prob)
+                        feasibility, _ = feasibility_check(temp_sol, prob)
                         feasibility_cache[sol_key] = (feasibility, _)
                     
                     if feasibility:
                         if sol_key in cost_cache:
                             temp_cost = cost_cache[sol_key]
                         else:
-                            temp_cost = cost_function(temp_d_sol, prob)
+                            temp_cost = cost_function(temp_sol, prob)
                             cost_cache[sol_key] = temp_cost
                             
                         if temp_cost < new_best_cost:
-                            new_best_sol = temp_d_sol
+                            new_best_sol = temp_sol
                             new_best_cost = temp_cost
         
         if biggest_diff_call in new_best_sol:
@@ -272,7 +291,7 @@ def k_regret(calls, prob, removed_sol, k=2):
 This operator chooses the vehicle with the biggest weight, and then chooses
 a random number of calls between one and ten of the calls inside that vehicle. 
 # """
-def weighted_removal(prob, sol, reinsert): 
+def weighted_removal(prob, sol, reinsert, feasibility_cache, cost_cache): 
     new_sol = sol.copy()
     vehicle_ranges = zero_pos(sol)
     biggest_weight = 0
@@ -301,27 +320,14 @@ def weighted_removal(prob, sol, reinsert):
         if len(calls_to_reinsert) < 10:
             num_to_select = np.random.randint(1, len(calls_to_reinsert) + 1)
         else:
-            num_to_select = np.random.randint(1, 10)
+            num_to_select = np.random.randint(2, int(len(calls_to_reinsert) * 0.6))
         
         selected_calls = np.random.choice(calls_to_reinsert, num_to_select, replace=False)
         
         # Remove selected calls
         new_sol = [x for x in new_sol if x not in selected_calls]
         
-        # x = "1234"
-        # chosen_reinsertion = random.choice(x)
-        
-        # if chosen_reinsertion == "1":
-        #     new_sol = random_reinsert(selected_calls, prob, new_sol)
-        # elif chosen_reinsertion == "2":
-        #     new_sol = easy_reinsert(selected_calls, prob, new_sol)
-        # elif chosen_reinsertion == "3":
-        #     new_sol = easy_shuffle_reinsert(selected_calls, prob, new_sol)
-        # elif chosen_reinsertion == "4":
-        #     new_sol = soft_greedy_reinsert(selected_calls, prob, new_sol)
-            # new_sol = empty_reinsert(selected_calls, prob, new_sol)
-        
-        new_sol = reinsert(selected_calls, prob, new_sol)
+        new_sol = reinsert(selected_calls, prob, new_sol, feasibility_cache, cost_cache)
       
     return new_sol
 
@@ -329,41 +335,18 @@ def weighted_removal(prob, sol, reinsert):
 This operator randomly chooses between 1 and 10 calls depending on the size of the file.
 Then inserst the calls back into the solution by using a easy_shuffle_reinsert.
 """
-def random_removal_1(prob, sol, reinsert):
+def random_removal_1(prob, sol, reinsert, feasibility_cache, cost_cache):
     new_sol = sol.copy()
     calls = prob['n_calls']
     calls_to_reinsert = []
-
-    # Choose a random number between 1 and 10
-    if calls < 10:
-        calls_n = np.random.randint(1, calls + 1)
-    else:
-        calls_n = np.random.randint(2, 10)
     
-    calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
+    calls_to_reinsert = random.sample(range(1, calls + 1), random.randint(2, int(calls * 0.6)))
     # print(f"calls to remove: {calls_to_reinsert}")
     
-
     # Remove selected calls
     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
-    # print(f"solution without the calls: {new_sol}")
     
-    # new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
-    # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    # x = "1234"
-    # chosen_reinsertion = random.choice(x)
-    
-    # if chosen_reinsertion == "1":
-    #     new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "2":
-    #     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "3":
-    #     new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "4":
-    #     new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
-        # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
-    
-    new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = reinsert(calls_to_reinsert, prob, new_sol, feasibility_cache, cost_cache)
         
     return new_sol
 
@@ -371,7 +354,7 @@ def random_removal_1(prob, sol, reinsert):
 This operator chooses randomly a car that contains calls,
 then it randomly chooses calls between 1 and 10.
 """
-def random_removal_2(prob, sol, reinsert):
+def random_removal_2(prob, sol, reinsert, feasibility_cache, cost_cache):
     new_sol = sol.copy()
     vehicles = prob['n_vehicles']
     vehicle_ranges = zero_pos(sol)
@@ -391,7 +374,7 @@ def random_removal_2(prob, sol, reinsert):
     if len(calls_list) < 10:
         calls_n = np.random.randint(1, len(calls_list) + 1)
     elif len(calls_list) >= 10:
-        calls_n = np.random.randint(2, 10)
+        calls_n = np.random.randint(2, int(len(calls_list) * 0.6))
     
     calls_to_reinsert = []
     while calls_n > 0:
@@ -402,29 +385,14 @@ def random_removal_2(prob, sol, reinsert):
         new_sol.remove(call)
         calls_to_reinsert.append(call)
     
-    # new_sol = greedy_reinsert(calls_to_reinsert, prob, new_sol)
-    # new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    # x = "1234"
-    # chosen_reinsertion = random.choice(x)
-    
-    # if chosen_reinsertion == "1":
-    #     new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "2":
-    #     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "3":
-    #     new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "4":
-    #     new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
-        # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
-    
-    new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = reinsert(calls_to_reinsert, prob, new_sol, feasibility_cache, cost_cache)
     
     return new_sol
 
 """
 This operator checks if there are any calls in the dummy that can be inserted into any of the vehicles
 """
-def dummy_removal(prob, sol, reinsert):
+def dummy_removal(prob, sol, reinsert, feasibility_cache, cost_cache):
     new_sol = sol.copy()
     vehicle_ranges = zero_pos(new_sol)
     
@@ -439,41 +407,21 @@ def dummy_removal(prob, sol, reinsert):
         if len(calls_list) < 10:
             calls_n = np.random.randint(1, len(calls_list) + 1)
         elif len(calls_list) >= 10:
-            calls_n = np.random.randint(2, 10)
+            calls_n = np.random.randint(2, int(len(calls_list) * 0.6))
     
-            
-        # calls_to_reinsert = random.sample(calls_list, calls_n)  
-    # calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
     calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)
     
     # Remove selected calls
     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
     
-    # new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
-    # return new_sol
-    
-  
-    # x = "1234"
-    # chosen_reinsertion = random.choice(x)
-    
-    # if chosen_reinsertion == "1":
-    #     new_sol = random_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "2":
-    #     new_sol = easy_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "3":
-    #     new_sol = easy_shuffle_reinsert(calls_to_reinsert, prob, new_sol)
-    # elif chosen_reinsertion == "4":
-    #     new_sol = soft_greedy_reinsert(calls_to_reinsert, prob, new_sol)
-    
-    # new_sol = empty_reinsert(calls_to_reinsert, prob, new_sol)
-    new_sol = reinsert(calls_to_reinsert, prob, new_sol)
+    new_sol = reinsert(calls_to_reinsert, prob, new_sol, feasibility_cache, cost_cache)
     
     return new_sol 
 
-def OP1(prob, sol):
+
+def OP1(prob, sol, feasibility_cache, cost_cache):
     # new_sol =  random_removal_1(prob, sol, soft_greedy_reinsert_2)
-    new_sol =  random_removal_1(prob, sol, k_regret)
+    new_sol =  random_removal_1(prob, sol, k_regret, feasibility_cache, cost_cache)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
@@ -481,9 +429,9 @@ def OP1(prob, sol):
     # print(f"new_sol {new_sol}, used random removal 1")
     return new_sol
 
-def OP2(prob, sol):
+def OP2(prob, sol, feasibility_cache, cost_cache):
     # new_sol = random_removal_2(prob, sol, soft_greedy_reinsert_2)
-    new_sol = random_removal_2(prob, sol, k_regret)
+    new_sol = random_removal_2(prob, sol, k_regret, feasibility_cache, cost_cache)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
@@ -491,9 +439,9 @@ def OP2(prob, sol):
     # print(f"new_sol {new_sol}, used random removal 2")
     return new_sol
 
-def OP3(prob, sol):
+def OP3(prob, sol, feasibility_cache, cost_cache):
     # new_sol = dummy_removal(prob, sol, soft_greedy_reinsert_2)
-    new_sol = dummy_removal(prob, sol, k_regret)
+    new_sol = dummy_removal(prob, sol, k_regret, feasibility_cache, cost_cache)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
@@ -501,9 +449,9 @@ def OP3(prob, sol):
     # print(f"new_sol {new_sol}, used dummy removal")
     return new_sol
 
-def OP4(prob, sol):
+def OP4(prob, sol, feasibility_cache, cost_cache):
     # new_sol = weighted_removal(prob, sol, soft_greedy_reinsert_2)
-    new_sol = weighted_removal(prob, sol, k_regret)
+    new_sol = weighted_removal(prob, sol, k_regret, feasibility_cache, cost_cache)
     # for i in range(10):
     #     if new_sol != sol:
     #         break
@@ -513,19 +461,30 @@ def OP4(prob, sol):
 
 
 
-def escape_algorithm(prob, incumbent, incumbent_cost, best_sol, best_cost, i_since_best):
+def escape_algorithm(prob, incumbent, incumbent_cost, best_sol, best_cost, i_since_best, feasibility_cache, cost_cache):
     # for i in range(n_calls * 3): # KANSKJE HOPPE LITT LENGRE ENN 20?
     for i in range(20):
         if i == 0:
             print(f'No improvement for {i_since_best} iterations. Current best cost: {best_cost}, and current cost: {incumbent_cost}')
             print(f"Trying to escape local optimum...")
-        new_sol = OP1(prob, incumbent)
+        new_sol = OP1(prob, incumbent, feasibility_cache, cost_cache)
         
-        feasibility, _ = feasibility_check(new_sol, prob)
+        sol_key = tuple(new_sol)
+        if sol_key in feasibility_cache:
+            feasibility, _ = feasibility_cache[sol_key]
+        else:
+            feasibility, _ = feasibility_check(new_sol, prob)
+            feasibility_cache[sol_key] = (feasibility, _)
+
         if not feasibility:
             continue
         
-        new_cost = cost_function(new_sol, prob)
+        if sol_key in cost_cache:
+            new_cost = cost_cache[sol_key]
+        else:
+            new_cost = cost_function(new_sol, prob)
+            cost_cache[sol_key] = new_cost
+
         delta_E = new_cost - incumbent_cost
         
         incumbent = new_sol.copy()
@@ -549,7 +508,8 @@ def acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iteratio
     
     # If I find a better solution than the current solution
     if feasibility and delta_E < 0:
-        incumbent = new_sol.copy()
+        # incumbent = new_sol.copy()
+        incumbent_sol = new_sol.copy()
         incumbent_cost = new_cost
         score += 2
         
@@ -562,11 +522,18 @@ def acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iteratio
         
      
 
-def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True):
+def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True): 
+    feasibility_cache = {}
+    cost_cache = {}
+    
     best_sol = initial_sol.copy()
     incumbent = initial_sol.copy()
+    
+    sol_key = tuple(incumbent)
     incumbent_cost = cost_function(incumbent, prob)
+    cost_cache[sol_key] = incumbent_cost
     best_cost = incumbent_cost
+    
     i_since_best = 0
     total_iterations = 10000
     counter = 0
@@ -591,11 +558,14 @@ def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True):
             "probability": 1.0 / len(operators)
         }
         
+    
     history = {
         "iterations": [],
         "best_costs": [],
+        "incumbent_costs": [],
         "operator_probs": {op["name"]: [] for op in operators},
-        "operator_scores": {op["name"]: [] for op in operators},
+        "operator_usage": {op["name"]: [] for op in operators},
+        "best_found_at": [],  # Track iterations when best solutions are found
         "segment_boundaries": []
     }
     
@@ -607,9 +577,9 @@ def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True):
             print(f"********Iteration {i}, Best Cost: {best_cost}********") 
         
         if i_since_best != 0 and i_since_best % 500 == 0:
-            incumbent, incumbent_cost, best_sol, best_cost, i_since_best = escape_algorithm(prob, incumbent, incumbent_cost, best_sol, best_cost, i_since_best)
+            incumbent, incumbent_cost, best_sol, best_cost, i_since_best = escape_algorithm(prob, incumbent, incumbent_cost, best_sol, best_cost, i_since_best, feasibility_cache, cost_cache)
         
-        new_sol = incumbent.copy()
+        # new_sol = incumbent.copy()
         
         # Choose a operator depending on selection parameters to apply to new_sol
         probabilities = [op_stats[op["name"]]["probability"] for op in operators]
@@ -617,13 +587,23 @@ def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True):
         chosen_op = operators[chosen_op_idx]
         
         # Apply selected operator
-        new_sol = chosen_op["function"](prob, incumbent)
+        new_sol = chosen_op["function"](prob, incumbent, feasibility_cache, cost_cache)
         op_stats[chosen_op["name"]]["counter"] += 1
         
-        feasibility, _ = feasibility_check(new_sol, prob)
+        sol_key = tuple(new_sol)
+        if sol_key in feasibility_cache:
+            feasibility, _ = feasibility_cache[sol_key]
+        else:
+            feasibility, _ = feasibility_check(new_sol, prob)
+            feasibility_cache[sol_key] = (feasibility, _)
+        
         if feasibility:
-            # print(f"Chosen operator: {chosen_op['name']}")
-            new_cost = cost_function(new_sol, prob)
+            if sol_key in cost_cache:
+                new_cost = cost_cache[sol_key]
+            else:
+                new_cost = cost_function(new_sol, prob)
+                cost_cache[sol_key] = new_cost
+
             delta_E = new_cost - incumbent_cost
             
             # Finding a better solution than the best solution
