@@ -95,11 +95,6 @@ def soft_greedy_reinsert_2(calls, prob, removed_sol):
         else:
             selected_vehicle = np.random.choice(possible_vehicles, replace=False)
           
-        # selected_vehicle = np.random.randint(0, vehicles_n)
-        # while prob['VesselCargo'][selected_vehicle][call - 1] == 0:
-        #     selected_vehicle = np.random.randint(0, vehicles_n)
-        
-        # print(f"index of vehicle: {selected_vehicle}")
         new_best_sol = best_sol.copy()
         new_best_cost = 1e12
         if isinstance(selected_vehicle, np.int64):
@@ -110,12 +105,6 @@ def soft_greedy_reinsert_2(calls, prob, removed_sol):
         for vehicle in selected_vehicle:
             start, end = list(vehicle_ranges)[vehicle]
             
-        
-        # start, end = list(vehicle_ranges)[selected_vehicle]
-        # new_best_sol = best_sol.copy()
-        # new_best_cost = 1e12
-        
- 
         # PICKUP
             for p_pos in range(start, end + 1):
                 temp_p_sol = best_sol.copy()
@@ -148,135 +137,8 @@ def soft_greedy_reinsert_2(calls, prob, removed_sol):
         
 
 """
-This reinsertion function checks the two best positions for the pickup and delivery of the calls, then it checks the difference between the cost of the two solution for every call, and then chooses the one that has the smallest difference.
-"""
-# def k_regret(calls, prob, removed_sol, k = 2):
-#     best_sol = removed_sol
-#     feasibility_cache = {}
-#     cost_cache = {}
-#     vehicles_n = prob['n_vehicles']
-#     remaining_calls = set(calls)
-        
-#     while remaining_calls:
-#         k_calls = []
-#         vehicle_ranges = zero_pos(best_sol)
-#         new_calls = []
-#         for call in calls:
-#             if call in remaining_calls:
-#                 new_calls.append(call)
-        
-#         for call in new_calls:
-#             if call not in remaining_calls:
-#                 continue
-#             k_best_positions = []
-#             for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-#                 if vehicle_index >= vehicles_n:
-#                     continue
-#                 # Check if the vehicle can take the call
-#                 print(f"call: {call}, vehicle_index: {vehicle_index}, start: {start}, end: {end}")
-#                 if prob['VesselCargo'][vehicle_index][call - 1] == 0:
-#                     continue
-                
-#                 # Find the k best positions for the pickup and delivery of the call
-                
-#                 # PICKUP
-#                 for p_pos in range(start, end + 1):
-#                     temp_p_sol = best_sol.copy()
-#                     temp_p_sol.insert(p_pos, call)
-                    
-#                     # DELIVERY
-#                     for d_pos in range(p_pos + 1, end + 2):
-#                         temp_d_sol = temp_p_sol.copy()
-#                         temp_d_sol.insert(d_pos, call)
-                        
-#                         sol_key = tuple(temp_d_sol)
-                        
-#                         if sol_key in feasibility_cache:
-#                             feasibility, _ = feasibility_cache[sol_key]
-#                         else:
-#                             feasibility, _ = feasibility_check(temp_d_sol, prob)
-#                             feasibility_cache[sol_key] = (feasibility, _)
-                        
-#                         if feasibility:
-#                             if sol_key in cost_cache:
-#                                 temp_cost = cost_cache[sol_key]
-#                             else:
-#                                 temp_cost = cost_function(temp_d_sol, prob)
-#                                 cost_cache[sol_key] = temp_cost
-                                
-#                             k_best_positions.append((temp_d_sol, temp_cost))
-                    
-#                 # Choose the k best posistions according to the cost
-#             k_best_positions = sorted(k_best_positions, key=lambda x: x[1])[:k]  
-#             k_calls.append(k_best_positions)
-        
-#         # Check the difference between the cost of the k solution for every call
-#         cost_for_calls_diffs = []
-#         for i in range(len(k_calls)):
-#             k_best_positions = k_calls[i]
-#             if len(k_best_positions) < k:
-#                 continue
-            
-#             # Calculate the difference between the cost of the two solution
-#             end = k-1
-#             cost_diff = abs(k_best_positions[0][1] - k_best_positions[end][1])
-            
-#             cost_for_calls_diffs.append((new_calls[i], cost_diff))
-            
-#         # Sort the calls according to the cost difference, from biggest to smallest
-#         cost_for_calls_diffs = sorted(cost_for_calls_diffs, key=lambda x: x[1], reverse=True)
-        
-#         if not cost_for_calls_diffs:
-#             break
-#         biggest_diff_call = cost_for_calls_diffs[0][0]
-#         new_best_sol = best_sol.copy()
-#         new_best_cost = 1e12
-        
-#         # Take the first call from the cost_for_calls_diffs list, and insert it into the best solution
-#         for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-#                 if vehicle_index >= vehicles_n:
-#                     continue
-#                 # Check if the vehicle can take the call
-#                 if prob['VesselCargo'][vehicle_index][biggest_diff_call - 1] == 0:
-#                     continue
-                
-#                 # Find the k best positions for the pickup and delivery of the call
-                
-#                 # PICKUP
-#                 for p_pos in range(start, end + 1):
-#                     temp_p_sol = best_sol.copy()
-#                     temp_p_sol.insert(p_pos, biggest_diff_call)
-                    
-#                     # DELIVERY
-#                     for d_pos in range(p_pos + 1, end + 2):
-#                         temp_d_sol = temp_p_sol.copy()
-#                         temp_d_sol.insert(d_pos, biggest_diff_call)
-                        
-#                         sol_key = tuple(temp_d_sol)
-                        
-#                         if sol_key in feasibility_cache:
-#                             feasibility, _ = feasibility_cache[sol_key]
-#                         else:
-#                             feasibility, _ = feasibility_check(temp_d_sol, prob)
-#                             feasibility_cache[sol_key] = (feasibility, _)
-                        
-#                         if feasibility:
-#                             if sol_key in cost_cache:
-#                                 temp_cost = cost_cache[sol_key]
-#                             else:
-#                                 temp_cost = cost_function(temp_d_sol, prob)
-#                                 cost_cache[sol_key] = temp_cost
-                                
-#                             if temp_cost < new_best_cost:
-#                                 new_best_sol = temp_d_sol
-#                                 new_best_cost = temp_cost
-                                
-#         best_sol = new_best_sol.copy()
-#         # calls = np.delete(calls, np.where(calls == biggest_diff_call))
-#         remaining_calls.remove(biggest_diff_call)
-    
-#     return best_sol         
-            
+This reinsertion function checks the two best positions for the pickup and delivery of the calls, then it checks the difference between the cost of the two solution for every call, and then chooses the one that has the biggest difference.
+"""            
 def k_regret(calls, prob, removed_sol, k=2):
     best_sol = removed_sol
     feasibility_cache = {}
@@ -405,109 +267,7 @@ def k_regret(calls, prob, removed_sol, k=2):
     return best_sol
         
         
-
-"""
-This reinsertion function, chooses a vehicle randomly and then adds the calls one by one into random vehicles
-"""
-def random_reinsert(calls, prob, removed_sol):
-    vehicles_n = prob['n_vehicles']
-    vehicle_ranges = zero_pos(removed_sol)
-    new_sol = removed_sol
-    
-    for call in calls:    
-        vehicle_to_select = np.random.randint(0, vehicles_n)
-        vehicle_index, (start, end) = list(enumerate(vehicle_ranges))[vehicle_to_select]
-        
-        # Insert pickup
-        pickup_pos = np.random.randint(start, end + 1)
-        new_sol.insert(pickup_pos, call)
-        
-        # Insert delivery
-        if pickup_pos < end:
-            delivery_pos = np.random.randint(pickup_pos + 1, end + 1)
-        else:
-            delivery_pos = pickup_pos + 1
-        new_sol.insert(delivery_pos, call)
-    
-    return new_sol
-
-"""
-This insertion function inserts all the calls into a random vehicle
-"""
-def easy_reinsert(calls, prob, removed_sol):
-    vehicles_n = prob['n_vehicles']
-    vehicle_ranges = zero_pos(removed_sol)
-    vehicle_to_select = np.random.randint(0, vehicles_n)
-    i_vehicle = vehicle_ranges[vehicle_to_select][0]
-    
-    new_sol = removed_sol
-    i_pos = 0
-      
-    for call in calls:
-        new_sol.insert(i_vehicle + i_pos, call)
-        i_pos += 1
-        new_sol.insert(i_vehicle + i_pos, call)
-        i_pos += 1 
- 
-    return new_sol
- 
-"""
-This insertion function inserts all the calls into a random vehicle, then shuffles the calls in that vehicle
-"""   
-def easy_shuffle_reinsert(calls, prob, removed_sol):
-    vehicles_n = prob['n_vehicles']
-    vehicle_ranges = zero_pos(removed_sol)
-    vehicle_to_select = np.random.randint(0, vehicles_n)
-    i_vehicle = vehicle_ranges[vehicle_to_select][0]
-
-    new_sol = removed_sol
-    i_pos = 0
-
-    for call in calls:
-        new_sol.insert(i_vehicle + i_pos, call)
-        i_pos += 1
-        new_sol.insert(i_vehicle + i_pos, call)
-        i_pos += 1
-
-    # Shuffle the calls:
-    vehicle_ranges = zero_pos(new_sol)
-    start, end = vehicle_ranges[vehicle_to_select]
-
-    shuffled_part = np.array(new_sol[start:end+1])
-    shuffled_part = shuffled_part[:-1]  
-    np.random.shuffle(shuffled_part)
-
-    new_sol[start:end+1] = shuffled_part.tolist() + [0]
-    
-    return new_sol
-
-# Ha en reinsert som sjekker om noen biler ikke har noen calls, for så og prøv å reinsert i den
-def empty_reinsert(calls, prob, removed_sol):
-    new_sol = removed_sol
-    vehicle_ranges = zero_pos(new_sol)
-    
-    for call in calls:
-        inserted_calls = False
-        for vehicle_index, (start, end) in enumerate(vehicle_ranges):
-            if end > start:
-                continue
-            else:
-                temp_sol = new_sol.copy()
-                temp_sol.insert(start + 1, call)
-                temp_sol.insert(start + 2, call)
-                feasibility, _ = feasibility_check(temp_sol, prob)
-                
-                if feasibility:
-                    new_sol = temp_sol
-                    inserted_calls = True
-                    break
-        
-        if not inserted_calls:
-            new_sol.append(call)
-            new_sol.append(call)
-    
-    return new_sol   
-        
+     
 """
 This operator chooses the vehicle with the biggest weight, and then chooses
 a random number of calls between one and ten of the calls inside that vehicle. 
@@ -792,12 +552,6 @@ def acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iteratio
         incumbent = new_sol.copy()
         incumbent_cost = new_cost
         score += 2
-        
-        # if incumbent_cost < best_cost:
-        #     best_sol = incumbent.copy()
-        #     best_cost = incumbent_cost
-        #     i_since_best = 0
-        #     score += 4
         
     elif feasibility and (new_cost <= max_acceptable_cost):
         incumbent = new_sol.copy()
