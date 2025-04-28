@@ -41,7 +41,7 @@ for file in files:
         
         try:
             # Run the optimized metaheuristic
-            sol, op_stats = general_adaptive_metaheuristics_2(prob, initial_sol.copy())
+            sol, op_stats = general_adaptive_metaheuristics(prob, initial_sol.copy())
             
             # Verify solution
             feasiblity, c = feasibility_check(sol, prob)

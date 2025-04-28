@@ -522,7 +522,7 @@ def acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iteratio
         
      
 
-def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True): 
+def general_adaptive_metaheuristics(prob, initial_sol, plot_results = True): 
     feasibility_cache = {}
     cost_cache = {}
     
