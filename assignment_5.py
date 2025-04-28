@@ -561,7 +561,6 @@ def acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iteratio
     return incumbent, incumbent_cost, score
         
      
-
 def general_adaptive_metaheuristics_2(prob, initial_sol, plot_results = True):
     best_sol = initial_sol.copy()
     incumbent = initial_sol.copy()
