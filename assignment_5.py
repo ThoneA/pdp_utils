@@ -641,7 +641,7 @@ def acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iteratio
     elif feasibility and (new_cost <= max_acceptable_cost):
         incumbent = new_sol.copy()
         incumbent_cost = new_cost
-        score += 1 # SKAL JEG HA DENNE????
+        # score += 1 # SKAL JEG HA DENNE????
 
     return incumbent, incumbent_cost, score
         
@@ -721,6 +721,8 @@ def general_adaptive_metaheuristics(prob, initial_sol, plot_results = True):
         else:
             feasibility, _ = feasibility_check(new_sol, prob)
             feasibility_cache[sol_key] = (feasibility, _)
+            op_stats[chosen_op["name"]]["score"] += 1 # Found a new solution
+            counter += 1
         
         if feasibility:
             if sol_key in cost_cache:
