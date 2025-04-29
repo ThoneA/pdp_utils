@@ -4,7 +4,87 @@ from pdp_utils.Utils import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+def vehicle_feasibility_check(vehicle_plan, vehicle_index, problem):
+    """
+    Check if a specific vehicle's plan is feasible
+    
+    :param vehicle_plan: List of calls (without zeros) assigned to this vehicle
+    :param vehicle_index: Index of the vehicle to check
+    :param problem: The pickup and delivery problem object
+    :return: tuple (is_feasible, reason)
+    """
+    # Extract necessary problem parameters
+    Cargo = problem['Cargo']
+    TravelTime = problem['TravelTime']
+    FirstTravelTime = problem['FirstTravelTime']
+    VesselCapacity = problem['VesselCapacity']
+    LoadingTime = problem['LoadingTime']
+    UnloadingTime = problem['UnloadingTime']
+    VesselCargo = problem['VesselCargo']
+    
+    # Convert plan to 0-indexed calls
+    vehicle_plan = [call - 1 for call in vehicle_plan if call != 0]
+    NoDoubleCallOnVehicle = len(vehicle_plan)
+    
+    # If the plan is empty, it's trivially feasible
+    if NoDoubleCallOnVehicle == 0:
+        return True, 'Feasible'
+    
+    # Check if all calls can be handled by this vehicle
+    if not np.all(VesselCargo[vehicle_index, vehicle_plan]):
+        return False, 'Incompatible vessel and cargo'
+    
+    # Calculate load changes throughout the route
+    LoadSize = 0
+    currentTime = 0
+    sortRout = np.sort(vehicle_plan, kind='mergesort')
+    I = np.argsort(vehicle_plan, kind='mergesort')
+    Indx = np.argsort(I, kind='mergesort')
+    LoadSize -= Cargo[sortRout, 2]
+    LoadSize[::2] = Cargo[sortRout[::2], 2]
+    LoadSize = LoadSize[Indx]
+    
+    # Check if capacity is exceeded at any point
+    if np.any(VesselCapacity[vehicle_index] - np.cumsum(LoadSize) < 0):
+        return False, 'Capacity exceeded'
+    
+    # Set up time windows
+    Timewindows = np.zeros((2, NoDoubleCallOnVehicle))
+    Timewindows[0] = Cargo[sortRout, 6]
+    Timewindows[0, ::2] = Cargo[sortRout[::2], 4]
+    Timewindows[1] = Cargo[sortRout, 7]
+    Timewindows[1, ::2] = Cargo[sortRout[::2], 5]
+    Timewindows = Timewindows[:, Indx]
+    
+    # Get port indices
+    PortIndex = Cargo[sortRout, 1].astype(int)
+    PortIndex[::2] = Cargo[sortRout[::2], 0]
+    PortIndex = PortIndex[Indx] - 1
+    
+    # Calculate loading/unloading times
+    LU_Time = UnloadingTime[vehicle_index, sortRout]
+    LU_Time[::2] = LoadingTime[vehicle_index, sortRout[::2]]
+    LU_Time = LU_Time[Indx]
+    
+    # Calculate travel times
+    if NoDoubleCallOnVehicle > 1:
+        Diag = TravelTime[vehicle_index, PortIndex[:-1], PortIndex[1:]]
+        FirstVisitTime = FirstTravelTime[vehicle_index, int(Cargo[vehicle_plan[0], 0] - 1)]
+        RouteTravelTime = np.hstack((FirstVisitTime, Diag.flatten()))
+    else:
+        # Only one call
+        FirstVisitTime = FirstTravelTime[vehicle_index, int(Cargo[vehicle_plan[0], 0] - 1)]
+        RouteTravelTime = np.array([FirstVisitTime])
+    
+    # Check time window constraints
+    ArriveTime = np.zeros(NoDoubleCallOnVehicle)
+    for j in range(NoDoubleCallOnVehicle):
+        ArriveTime[j] = max(currentTime + RouteTravelTime[j], Timewindows[0, j])
+        if ArriveTime[j] > Timewindows[1, j]:
+            return False, f'Time window exceeded at call {vehicle_plan[j] + 1}'
+        currentTime = ArriveTime[j] + LU_Time[j]
+    
+    return True, 'Feasible'
 
 """
 This function returns the vehicle ranges 
@@ -92,7 +172,7 @@ def soft_greedy_reinsert(calls, prob, removed_sol):
 """
 This reinsertion function chooses a random vehicle, then finds the best position to place the pickup and delivery for all calls
 """
-def soft_greedy_reinsert_2(calls, prob, removed_sol):
+def soft_greedy_reinsert_2(calls, prob, removed_sol, feasibility_cache, cost_cache):
     best_sol = removed_sol
     vehicle_ranges = zero_pos(removed_sol)
     vehicles_n = prob['n_vehicles']
@@ -121,22 +201,35 @@ def soft_greedy_reinsert_2(calls, prob, removed_sol):
             
         # PICKUP
             for p_pos in range(start, end + 1):
-                temp_p_sol = best_sol.copy()
-                temp_p_sol.insert(p_pos, call)
-                
                 # DELIVERY
                 for d_pos in range(p_pos + 1, end + 2):
-                    temp_d_sol = temp_p_sol.copy()
-                    temp_d_sol.insert(d_pos, call)
+                    temp_sol = best_sol.copy()
+                    temp_sol.insert(p_pos, call)
+                    temp_sol.insert(d_pos, call)
                     
-                    feasibility, _ = feasibility_check(temp_d_sol, prob)
+                    new_vehicle_ranges = zero_pos(temp_sol)
+                    v_start, v_end = list(new_vehicle_ranges)[selected_vehicle] # HER MÅ JEG KANSJE BRUKE ENUMERATE?
+                    vehicle_plan = temp_sol[v_start:v_end]
+                    
+                    sol_key = tuple(temp_sol)
+                    
+                    if sol_key in feasibility_cache:
+                        feasibility, _ = feasibility_cache[sol_key]
+                    else:
+                        # feasibility, _ = feasibility_check(temp_sol, prob)
+                        feasibility, _ = vehicle_feasibility_check(vehicle_plan, selected_vehicle, prob)
+                        feasibility_cache[sol_key] = (feasibility, _)
                     
                     if feasibility:
-                        temp_cost = cost_function(temp_d_sol, prob)
-                        
-                        if temp_cost < new_best_cost:
-                            new_best_sol = temp_d_sol
-                            new_best_cost = temp_cost
+                        if sol_key in cost_cache:
+                            temp_cost = cost_cache[sol_key]
+                        else:
+                            temp_cost = cost_function(temp_sol, prob)
+                            cost_cache[sol_key] = temp_cost
+                    
+                    if temp_cost < new_best_cost:
+                        new_best_sol = temp_sol
+                        new_best_cost = temp_cost
             
         if call in new_best_sol:
             best_sol = new_best_sol.copy()
@@ -163,6 +256,10 @@ def k_regret(calls, prob, removed_sol, feasibility_cache, cost_cache):
     while remaining_calls:
         k_calls = []
         vehicle_ranges = zero_pos(best_sol)
+        # print(f"vehicle_ranges: {vehicle_ranges}")
+        # print(f"vehicle range 0 {vehicle_ranges[0]}")
+        # print(f"vehicle start: {vehicle_ranges[3][0]} and end: {vehicle_ranges[1][1]}")
+        # print(f"solution intervall in dummy: {best_sol[vehicle_ranges[3][0]:vehicle_ranges[3][1]]}")
         new_calls = [call for call in calls if call in remaining_calls]
         
         for call in new_calls:
@@ -187,12 +284,18 @@ def k_regret(calls, prob, removed_sol, feasibility_cache, cost_cache):
                         temp_sol.insert(p_pos, call)
                         temp_sol.insert(d_pos, call)
                         
+                        new_vehicle_ranges = zero_pos(temp_sol)
+                        v_start= new_vehicle_ranges[vehicle_index][0]
+                        v_end = new_vehicle_ranges[vehicle_index][1]
+                        vehicle_plan = temp_sol[v_start:v_end]
+                        
                         sol_key = tuple(temp_sol)
                         
                         if sol_key in feasibility_cache:
                             feasibility, _ = feasibility_cache[sol_key]
                         else:
-                            feasibility, _ = feasibility_check(temp_sol, prob)
+                            # feasibility, _ = feasibility_check(temp_sol, prob)
+                            feasibility, _ = vehicle_feasibility_check(temp_sol[v_start : v_end], vehicle_index, prob)
                             feasibility_cache[sol_key] = (feasibility, _)
                         
                         if feasibility:
@@ -429,7 +532,7 @@ def dummy_removal(prob, sol, reinsert, feasibility_cache, cost_cache):
         if len(calls_list) < 10:
             calls_n = np.random.randint(1, len(calls_list) + 1)
         else:
-            calls_n = np.random.randing(2,10)
+            calls_n = np.random.randint(2,10)
     
     calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)
     
