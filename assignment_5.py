@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+
 """
 This function returns the vehicle ranges 
 """
@@ -12,25 +13,25 @@ def zero_pos(sol):
     sol_array = np.array(sol)
     zero_indices = np.where(sol_array == 0)[0]
     
-    # vehicle_ranges = []
-    # start_index = 0  
+    vehicle_ranges = []
+    start_index = 0  
     
-    # for zero in zero_indices:
-    #     vehicle_ranges.append((start_index, zero)) 
-    #     start_index = zero + 1
-    # vehicle_ranges.append((start_index, len(sol) - 1))
+    for zero in zero_indices:
+        vehicle_ranges.append((start_index, zero)) 
+        start_index = zero + 1
+    vehicle_ranges.append((start_index, len(sol) - 1))
     
         # Create vehicle ranges directly as a numpy array
-    n_ranges = len(zero_indices) + 1
-    vehicle_ranges = np.zeros((n_ranges, 2), dtype=int)
+    # n_ranges = len(zero_indices) + 1
+    # vehicle_ranges = np.zeros((n_ranges, 2), dtype=int)
     
-    # Set start indices
-    vehicle_ranges[0, 0] = 0
-    vehicle_ranges[1:, 0] = zero_indices + 1
+    # # Set start indices
+    # vehicle_ranges[0, 0] = 0
+    # vehicle_ranges[1:, 0] = zero_indices + 1
     
-    # Set end indices
-    vehicle_ranges[:-1, 1] = zero_indices
-    vehicle_ranges[-1, 1] = len(sol) - 1
+    # # Set end indices
+    # vehicle_ranges[:-1, 1] = zero_indices
+    # vehicle_ranges[-1, 1] = len(sol) - 1
     
     return vehicle_ranges
 
@@ -152,7 +153,7 @@ def soft_greedy_reinsert_2(calls, prob, removed_sol):
 """
 This reinsertion function checks the two best positions for the pickup and delivery of the calls, then it checks the difference between the cost of the two solution for every call, and then chooses the one that has the biggest difference.
 """            
-def k_regret(calls, prob, removed_sol, feasibility_cache, cost_cache , k=2):
+def k_regret(calls, prob, removed_sol, feasibility_cache, cost_cache):
     best_sol = removed_sol
     # feasibility_cache = {}
     # cost_cache = {}
@@ -206,6 +207,12 @@ def k_regret(calls, prob, removed_sol, feasibility_cache, cost_cache , k=2):
                             # print(f"k_best_positions: {k_best_positions}")
             
             # Keep only the k best positions
+            if len(calls) >= 20:
+                k = 4
+            elif 20 > len(calls) >= 10:
+                k = 3
+            else:
+                k = 2
             k_best_positions = sorted(k_best_positions, key=lambda x: x[1])[:k]
             if len(k_best_positions) >= k:
                 k_calls.append(k_best_positions)
@@ -318,7 +325,7 @@ def weighted_removal(prob, sol, reinsert, feasibility_cache, cost_cache):
     
     if calls_to_reinsert:
         if len(calls_to_reinsert) < 10:
-            num_to_select = np.random.randint(1, len(calls_to_reinsert) + 1)
+            num_to_select = np.random.randint(1, len(calls_to_reinsert) + 1 )
         else:
             num_to_select = np.random.randint(2, int(len(calls_to_reinsert) * 0.6))
         
@@ -340,8 +347,17 @@ def random_removal_1(prob, sol, reinsert, feasibility_cache, cost_cache):
     calls = prob['n_calls']
     calls_to_reinsert = []
     
-    calls_to_reinsert = random.sample(range(1, calls + 1), random.randint(2, int(calls * 0.6)))
+    # if calls > 30:
+    #     calls_to_reinsert = random.sample(range(1, calls + 1), random.randint(2, 25))
+    # else:
+    #     calls_to_reinsert = random.sample(range(1, calls + 1), random.randint(1, int(calls * 0.6)))
+    if calls < 10:
+        calls_n = np.random.randint(1, calls + 1)
+    else:
+        calls_n = np.random.randint(2, 10)
     # print(f"calls to remove: {calls_to_reinsert}")
+    
+    calls_to_reinsert = random.sample(range(1, calls + 1), calls_n)
     
     # Remove selected calls
     new_sol = [x for x in new_sol if x not in calls_to_reinsert]
@@ -373,8 +389,10 @@ def random_removal_2(prob, sol, reinsert, feasibility_cache, cost_cache):
 
     if len(calls_list) < 10:
         calls_n = np.random.randint(1, len(calls_list) + 1)
-    elif len(calls_list) >= 10:
-        calls_n = np.random.randint(2, int(len(calls_list) * 0.6))
+    else:
+        # calls_n = np.random.randint(2, int(len(calls_list) * 0.6))
+        calls_n = np.random.randint(2, 10)
+        
     
     calls_to_reinsert = []
     while calls_n > 0:
@@ -404,10 +422,14 @@ def dummy_removal(prob, sol, reinsert, feasibility_cache, cost_cache):
     calls_list = list(unique_calls)
     
     if end > start:
+        # if len(calls_list) < 10:
+        #     calls_n = np.random.randint(1, len(calls_list) + 1)
+        # elif len(calls_list) >= 10:
+        #     calls_n = np.random.randint(2, int(len(calls_list) * 0.6))
         if len(calls_list) < 10:
             calls_n = np.random.randint(1, len(calls_list) + 1)
-        elif len(calls_list) >= 10:
-            calls_n = np.random.randint(2, int(len(calls_list) * 0.6))
+        else:
+            calls_n = np.random.randing(2,10)
     
     calls_to_reinsert = random.sample(range(1, len(calls_list) + 1), calls_n)
     
@@ -508,8 +530,8 @@ def acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iteratio
     
     # If I find a better solution than the current solution
     if feasibility and delta_E < 0:
-        # incumbent = new_sol.copy()
-        incumbent_sol = new_sol.copy()
+        incumbent = new_sol.copy()
+        # incumbent_sol = new_sol.copy()
         incumbent_cost = new_cost
         score += 2
         
@@ -615,7 +637,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, plot_results = True):
                 incumbent_cost = new_cost
                 op_stats[chosen_op["name"]]["score"] += 4
                 counter += 4
-                
+                history["best_found_at"].append(i)
             else:
                 incumbent, incumbent_cost, score = acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iterations, best_cost, new_cost, feasibility, delta_E)
                 i_since_best += 1
@@ -666,19 +688,171 @@ def general_adaptive_metaheuristics(prob, initial_sol, plot_results = True):
                             print(f"Operator: {op['name']}, Probability: {op_stats[op['name']]['probability']}")
                 
             
-            
+            history["iterations"].append(i)
+            history["best_costs"].append(best_cost)
+            history["incumbent_costs"].append(incumbent_cost)
             
             # Record updated probabilities
             for op in operators:
                 op_name = op["name"]
                 # history["operator_probs"][op_name].append(op_stats[op_name]["probability"])
+                history["operator_probs"][op_name].append(op_stats[op_name]["probability"])
+                # Track operator usage count
+                history["operator_usage"][op_name].append(op_stats[op_name]["counter"])
             
             # Reset scores and counters for the next segment
             for op in operators:
                 op_stats[op["name"]]["score"] = 0
                 op_stats[op["name"]]["counter"] = 0
+            
+
            
-    return best_sol, op_stats
+
+                
+
+           
+    return best_sol, op_stats, history
 
 
+
+def plot_optimization_history(history, filename, save_fig=False):
+    """Plot the optimization progress"""
+    plt.figure(figsize=(15, 10))
+    
+    # Plot 1: Objective function over iterations
+    plt.subplot(2, 2, 1)
+    plt.plot(history["iterations"], history["best_costs"], 'b-', label='Best Cost')
+    plt.plot(history["iterations"], history["incumbent_costs"], 'r-', alpha=0.5, label='Incumbent Cost')
+    
+    # Mark when best solutions were found
+    if history["best_found_at"]:
+        best_costs = []
+        for i in history["best_found_at"]:
+            # Find closest recorded iteration
+            closest_idx = np.argmin(np.abs(np.array(history["iterations"]) - i))
+            if closest_idx < len(history["best_costs"]):
+                best_costs.append(history["best_costs"][closest_idx])
+            else:
+                best_costs.append(history["best_costs"][-1])
+        
+        plt.scatter(history["best_found_at"], best_costs, c='green', marker='*', s=100, label='New Best Found')
+    
+    plt.title(f'Optimization Progress for {filename}')
+    plt.xlabel('Iteration')
+    plt.ylabel('Cost')
+    plt.legend()
+    plt.grid(True)
+    
+    # Plot 2: Operator Probabilities
+    plt.subplot(2, 2, 2)
+    for op_name, probs in history["operator_probs"].items():
+        plt.plot(history["iterations"], probs, label=op_name)
+    
+    plt.title('Operator Probabilities Over Time')
+    plt.xlabel('Iteration')
+    plt.ylabel('Probability')
+    plt.legend()
+    plt.grid(True)
+    
+    # Plot 3: Operator Usage
+    plt.subplot(2, 2, 3)
+    for op_name, usage in history["operator_usage"].items():
+        plt.plot(history["iterations"], usage, label=op_name)
+    
+    plt.title('Operator Usage Count')
+    plt.xlabel('Iteration')
+    plt.ylabel('Count')
+    plt.legend()
+    plt.grid(True)
+    
+    # Plot 4: Improvement Rate
+    plt.subplot(2, 2, 4)
+    
+    # Calculate percentage improvement from initial cost
+    if history["best_costs"]:
+        initial_cost = history["best_costs"][0]
+        improvement = [(initial_cost - cost) / initial_cost * 100 for cost in history["best_costs"]]
+        plt.plot(history["iterations"], improvement, 'g-')
+        plt.title('Improvement Rate (%)')
+        plt.xlabel('Iteration')
+        plt.ylabel('Improvement (%)')
+        plt.grid(True)
+    
+    plt.tight_layout()
+    
+    if save_fig:
+        plt.savefig(f'optimization_history_{filename}.png', dpi=300)
+    plt.show()
+
+def plot_convergence_statistics(all_histories, filename, save_fig=False):
+    """Plot statistics across multiple runs"""
+    if not all_histories:
+        return
+    
+    plt.figure(figsize=(15, 10))
+    
+    # Plot 1: Best costs across all runs
+    plt.subplot(2, 2, 1)
+    for i, history in enumerate(all_histories):
+        plt.plot(history["iterations"], history["best_costs"], alpha=0.3, label=f'Run {i+1}')
+    
+    # Calculate and plot average
+    avg_iterations = all_histories[0]["iterations"]  # Assume all have same iterations
+    avg_costs = np.zeros_like(avg_iterations, dtype=float)
+    
+    for history in all_histories:
+        avg_costs += np.array(history["best_costs"])
+    
+    avg_costs /= len(all_histories)
+    plt.plot(avg_iterations, avg_costs, 'k-', linewidth=2, label='Average')
+    
+    plt.title(f'Convergence Across Runs for {filename}')
+    plt.xlabel('Iteration')
+    plt.ylabel('Best Cost')
+    plt.legend()
+    plt.grid(True)
+    
+    # Plot 2: When best solutions were found
+    plt.subplot(2, 2, 2)
+    all_best_found = []
+    for history in all_histories:
+        all_best_found.extend(history["best_found_at"])
+    
+    plt.hist(all_best_found, bins=20, alpha=0.7)
+    plt.title('Distribution of When Best Solutions Were Found')
+    plt.xlabel('Iteration')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    
+    # Plot 3: Average operator probabilities
+    plt.subplot(2, 2, 3)
+    op_names = list(all_histories[0]["operator_probs"].keys())
+    
+    for op_name in op_names:
+        avg_probs = np.zeros_like(avg_iterations, dtype=float)
+        for history in all_histories:
+            avg_probs += np.array(history["operator_probs"][op_name])
+        avg_probs /= len(all_histories)
+        
+        plt.plot(avg_iterations, avg_probs, label=op_name)
+    
+    plt.title('Average Operator Probabilities')
+    plt.xlabel('Iteration')
+    plt.ylabel('Probability')
+    plt.legend()
+    plt.grid(True)
+    
+    # Plot 4: Final performance boxplot
+    plt.subplot(2, 2, 4)
+    final_costs = [history["best_costs"][-1] for history in all_histories]
+    plt.boxplot(final_costs)
+    plt.title('Final Solution Quality')
+    plt.ylabel('Cost')
+    plt.grid(True)
+    
+    plt.tight_layout()
+    
+    if save_fig:
+        plt.savefig(f'convergence_statistics_{filename}.png', dpi=300)
+    plt.show()
  

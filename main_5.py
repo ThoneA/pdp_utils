@@ -28,6 +28,7 @@ for file in files:
     best_sol = None
     best_obj = float('inf')
     start_time = time.time()
+    all_histories = []
     
     # Generate initial solution once per file
     initial_sol = initial_solution(prob)
@@ -41,13 +42,14 @@ for file in files:
         
         try:
             # Run the optimized metaheuristic
-            sol, op_stats = general_adaptive_metaheuristics(prob, initial_sol.copy())
+            sol, op_stats, history = general_adaptive_metaheuristics(prob, initial_sol.copy())
             
             # Verify solution
             feasiblity, c = feasibility_check(sol, prob)
             if feasiblity:
                 cost = cost_function(sol, prob)
                 objective_values.append(cost)
+                all_histories.append(history)
                 
                 print(f"Run {run+1} completed with cost: {cost}")
 
@@ -55,6 +57,7 @@ for file in files:
                     best_obj = cost
                     best_sol = sol.copy()
                     best_op_stats = op_stats.copy()
+                    best_history = history
                     print(f"New best solution found: {best_obj}")
             else:
                 print("Warning: Infeasible solution produced")
@@ -93,6 +96,12 @@ for file in files:
             'Status': 'No feasible solution found',
             'Running time (s)': running_time
         }
+            
+    if best_sol is not None:
+        plot_optimization_history(best_history, file, save_fig=True)
+    
+    if all_histories:
+        plot_convergence_statistics(all_histories, file, save_fig=True)
 
 # Print overall results
 print("\n===== OVERALL RESULTS =====")
