@@ -556,7 +556,7 @@ def escape_algorithm(prob, incumbent, incumbent_cost, best_sol, best_cost, i_sin
             best_sol = new_sol.copy()
             best_cost = new_cost
             i_since_best = 0
-            print(f"Found a better solution: {best_cost} at iteration {i}")
+            print(f"Found a better solution: {best_cost} at iteration {i}\nBest Sol: {best_sol}")
             break
 
     return incumbent, incumbent_cost, best_sol, best_cost, i_since_best, score
@@ -666,7 +666,7 @@ def general_adaptive_metaheuristics(prob, initial_sol, plot_results = True):
             op_stats[chosen_op["name"]]["score"] += 4
             counter += 4
             history["best_found_at"].append(i)
-            print(f"found a better solution at iteration {i}, with cost {best_cost}")
+            print(f"found a better solution at iteration {i}, with cost {best_cost}\nBest Sol: {best_sol}")
         else:
             incumbent, incumbent_cost, score = acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iterations, best_cost, new_cost, delta_E)
             i_since_best += 1
