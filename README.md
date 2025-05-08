@@ -2,7 +2,8 @@
 This repo, has been reconstructed from the original.
 
 # If you get MemoryError try this:
-Remove feasibility_cache and cost_cache for when there are more calls than 35
+Change to the branch: if crash
+This branch does not have caching, which is probably the main reason for the MemoryError :/
 
 # If it crashes try this:
 Only run one and one file. 
