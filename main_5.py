@@ -10,9 +10,9 @@ import gc
 # Make sure to back up any important data before running this script.
 
 files = [
-        # 'Call_7_Vehicle_3.txt', 
-        # 'Call_18_Vehicle_5.txt',
-        'Call_35_Vehicle_7.txt',
+        'Call_7_Vehicle_3.txt', 
+        'Call_18_Vehicle_5.txt',
+        # 'Call_35_Vehicle_7.txt',
         # 'Call_80_Vehicle_20.txt',
         # 'Call_130_Vehicle_40.txt',
         # 'Call_300_Vehicle_90.txt',  
@@ -36,6 +36,9 @@ for file in files:
     # Clear the results log file at the start of the script
     with open(f"log/{str(prob['n_calls'])}_log.txt", "w") as log_file:
         log_file.write(f"Starting call_{prob['n_calls']}\n")
+    
+    with open(f"log/new_best/{str(prob['n_calls'])}_new_best_log.txt", "w") as n_w_file:
+        n_w_file.write(f"Starting call_{prob['n_calls']}\n")
     
     # Generate initial solution once per file
     initial_sol = initial_solution(prob)

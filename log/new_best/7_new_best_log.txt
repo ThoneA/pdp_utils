@@ -1,0 +1,13 @@
+Starting call_7
+
+Found a better solution at iteration 0, with cost: 1528867.0
+Best Sol: [4, 4, 0, 2, 2, 0, 5, 3, 5, 7, 3, 7, 0, 1, 1, 6, 6]
+
+Found a better solution at iteration 28, with cost: 1436528.0
+Best Sol: [4, 4, 0, 5, 5, 2, 2, 0, 6, 6, 3, 7, 3, 7, 0, 1, 1]
+
+Found a better solution at iteration 69, with cost: 1392385.0
+Best Sol: [4, 4, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6, 2, 2]
+
+Found a better solution at iteration 74, with cost: 1134176.0
+Best Sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6]

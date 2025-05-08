@@ -670,8 +670,9 @@ def general_adaptive_metaheuristics(prob, initial_sol, plot_results = True):
                 counter += 4
                 history["best_found_at"].append(i)
                 print(f"found a better solution at iteration {i}, with cost {best_cost}\nBest Sol: {best_sol}")
-                log_file.write(f"\nFound a better solution at iteration {i}, with cost: {best_cost}\nBest Sol: {best_sol}\n")
-                log_file.flush()
+                with open(f"log/new_best/{str(prob['n_calls'])}_new_best_log.txt", "a") as n_w_file:
+                    n_w_file.write(f"\nFound a better solution at iteration {i}, with cost: {best_cost}\nBest Sol: {best_sol}\n")
+                    n_w_file.flush()
                 
             else:
                 incumbent, incumbent_cost, score = acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iterations, best_cost, new_cost, delta_E)
