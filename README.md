@@ -1,5 +1,17 @@
 # UiB INF273-Meta-Heuristikkar Pickup and Delivery Problem utils
-This Repo is dedicated to the function utils needed for the course project semester spring 2021.
+This repo, has been reconstructed from the original.
+
+# If you get MemoryError try this:
+Remove feasibility_cache and cost_cache for when there are more calls than 35
+
+# If it crashes try this:
+Only run one and one file. 
+
+# If it runs to slow:
+Try to remove OP5 in the escape_algorithm().
+
+
+
 
 # Requirement
 - numpy
