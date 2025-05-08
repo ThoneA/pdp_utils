@@ -1,69 +1,13 @@
 Starting call_7
 
 iteration: 0 
-best_cost: 1528867.0 
-incumbent_cost: 1528867.0 
-best_sol: [4, 4, 0, 2, 2, 0, 5, 3, 5, 7, 3, 7, 0, 1, 1, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.25}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.25}, 'P3': {'score': 4, 'counter': 1, 'probability': 0.25}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.25}}
+best_cost: 1601158.0 
+incumbent_cost: 1601158.0 
+best_sol: [4, 4, 0, 2, 2, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6, 7, 7] 
+op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.25}, 'P2': {'score': 4, 'counter': 1, 'probability': 0.25}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.25}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.25}}
 
 iteration: 1000 
 best_cost: 1134176.0 
-incumbent_cost: 1134176.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.5226578689060967}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.048233177009488495}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.38087577707492637}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.048233177009488495}}
-
-iteration: 2000 
-best_cost: 1134176.0 
-incumbent_cost: 1134176.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.600467289719626}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.13317757009345793}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.13317757009345793}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.13317757009345793}}
-
-iteration: 3000 
-best_cost: 1134176.0 
-incumbent_cost: 1134176.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.1646369223765081}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.03943774186205327}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.7564875938993855}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.03943774186205327}}
-
-iteration: 4000 
-best_cost: 1134176.0 
 incumbent_cost: 1248863.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.5340909090909091}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.15530303030303028}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.15530303030303028}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.15530303030303028}}
-
-iteration: 5000 
-best_cost: 1134176.0 
-incumbent_cost: 1248863.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.6810344827586207}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.10632183908045977}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.10632183908045977}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.10632183908045977}}
-
-iteration: 6000 
-best_cost: 1134176.0 
-incumbent_cost: 1134176.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.11886356205334206}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.3981853426129198}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.027780372740436262}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.4551707225933019}}
-
-iteration: 7000 
-best_cost: 1134176.0 
-incumbent_cost: 1134176.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.5524193548387096}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.14919354838709675}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.14919354838709675}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.14919354838709675}}
-
-iteration: 8000 
-best_cost: 1134176.0 
-incumbent_cost: 1134176.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.798780487804878}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.06707317073170732}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.06707317073170732}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.06707317073170732}}
-
-iteration: 9000 
-best_cost: 1134176.0 
-incumbent_cost: 1134176.0 
-best_sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
-op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.7567567567567568}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.0810810810810811}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.0810810810810811}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.0810810810810811}}
-
- 
-Results for Call_7_Vehicle_3.txt:
-Best Objective: 1134176.00
-Improvement %: 65.02
-Running time (s): 7.58
-Feasibility: Feasible
-Best sol: [4, 4, 2, 2, 0, 7, 7, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6]
+best_sol: [4, 4, 7, 7, 0, 2, 2, 0, 1, 5, 5, 3, 3, 1, 0, 6, 6] 
+op_stats: {'P1': {'score': 0, 'counter': 0, 'probability': 0.21183206106870228}, 'P2': {'score': 0, 'counter': 0, 'probability': 0.048255179934569244}, 'P3': {'score': 0, 'counter': 0, 'probability': 0.6916575790621592}, 'P4': {'score': 0, 'counter': 0, 'probability': 0.048255179934569244}}
