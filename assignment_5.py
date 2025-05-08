@@ -631,99 +631,97 @@ def general_adaptive_metaheuristics(prob, initial_sol, plot_results = True):
         "segment_boundaries": []
     }
     
-    
-    # Hvilke stop condition skal jeg ha?
-    for i in range(total_iterations):
-        # print(f"Iteration {i}, Best Cost: {best_cost}")
-        if i % 1000 == 0:
-            print(f"********Iteration {i}, Best Cost: {best_cost}, \nBest Sol: {best_sol}********") 
+    # Open a file to write results continuously
+    with open(f"log/{str(prob['n_calls'])}_log.txt", "a") as log_file:
+        # log_file.write("Iteration, Best Cost, Incumbent Cost, Operator Probabilities\n")
         
-        if i_since_best != 0 and i_since_best % 500 == 0:
-            incumbent, incumbent_cost, best_sol, best_cost, i_since_best, new_score = escape_algorithm(prob, incumbent, incumbent_cost, best_sol, best_cost, i_since_best, feasibility_cache, cost_cache)
-        
-        # new_sol = incumbent.copy()
-        
-        # Choose a operator depending on selection parameters to apply to new_sol
-        probabilities = [op_stats[op["name"]]["probability"] for op in operators]
-        chosen_op_idx = random.choices(range(len(operators)), weights=probabilities, k=1)[0]
-        chosen_op = operators[chosen_op_idx]
-        
-        # Apply selected operator
-        new_sol, new_cost, new_score = chosen_op["function"](prob, incumbent, feasibility_cache, cost_cache)
-        op_stats[chosen_op["name"]]["counter"] += 1
-        if new_score != 0:
-            op_stats[chosen_op["name"]]["score"] += new_score
+        # Hvilke stop condition skal jeg ha?
+        for i in range(total_iterations):
+            # print(f"Iteration {i}, Best Cost: {best_cost}")
+            if i % 1000 == 0:
+                print(f"********Iteration {i}, Best Cost: {best_cost}, \nBest Sol: {best_sol}********") 
+            
+            if i_since_best != 0 and i_since_best % 500 == 0:
+                incumbent, incumbent_cost, best_sol, best_cost, i_since_best, new_score = escape_algorithm(prob, incumbent, incumbent_cost, best_sol, best_cost, i_since_best, feasibility_cache, cost_cache)
+            
+            # new_sol = incumbent.copy()
+            
+            # Choose a operator depending on selection parameters to apply to new_sol
+            probabilities = [op_stats[op["name"]]["probability"] for op in operators]
+            chosen_op_idx = random.choices(range(len(operators)), weights=probabilities, k=1)[0]
+            chosen_op = operators[chosen_op_idx]
+            
+            # Apply selected operator
+            new_sol, new_cost, new_score = chosen_op["function"](prob, incumbent, feasibility_cache, cost_cache)
+            op_stats[chosen_op["name"]]["counter"] += 1
+            if new_score != 0:
+                op_stats[chosen_op["name"]]["score"] += new_score
 
-        delta_E = new_cost - incumbent_cost
-        
-        # Finding a better solution than the best solution
-        if new_cost < best_cost:
-            best_sol = new_sol.copy()
-            best_cost = new_cost
-            i_since_best = 0
-            incumbent = new_sol.copy()
-            incumbent_cost = new_cost
-            op_stats[chosen_op["name"]]["score"] += 4
-            counter += 4
-            history["best_found_at"].append(i)
-            print(f"found a better solution at iteration {i}, with cost {best_cost}\nBest Sol: {best_sol}")
-        else:
-            incumbent, incumbent_cost, score = acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iterations, best_cost, new_cost, delta_E)
-            i_since_best += 1
-            op_stats[chosen_op["name"]]["score"] += score
-            counter += score
+            delta_E = new_cost - incumbent_cost
             
-        # Updating selection parameters for the operators, and iterate i
-        if i != 0 and i % 100 == 0:
-            # Record scores before updating
-            for op in operators:
-                op_name = op["name"]
-                # history["operator_scores"][op_name].append(op_stats[op_name]["score"])
-            
-            total_score = sum(op_stats[op["name"]]["score"] for op in operators)
-            total_count = sum(op_stats[op["name"]]["counter"] for op in operators)
-            
-            if total_score > 0 and total_count > 0:
-                # Calculating new probabilities for each operator
+            # Finding a better solution than the best solution
+            if new_cost < best_cost:
+                best_sol = new_sol.copy()
+                best_cost = new_cost
+                i_since_best = 0
+                incumbent = new_sol.copy()
+                incumbent_cost = new_cost
+                op_stats[chosen_op["name"]]["score"] += 4
+                counter += 4
+                history["best_found_at"].append(i)
+                print(f"found a better solution at iteration {i}, with cost {best_cost}\nBest Sol: {best_sol}")
+                log_file.write(f"\nFound a better solution at iteration {i}, with cost: {best_cost}\nBest Sol: {best_sol}\n")
+                log_file.flush()
+                
+            else:
+                incumbent, incumbent_cost, score = acceptance_probability(new_sol, incumbent, incumbent_cost, i, total_iterations, best_cost, new_cost, delta_E)
+                i_since_best += 1
+                op_stats[chosen_op["name"]]["score"] += score
+                counter += score
+                
+            # Updating selection parameters for the operators, and iterate i
+            if i != 0 and i % 100 == 0:
+                total_score = sum(op_stats[op["name"]]["score"] for op in operators)
+                total_count = sum(op_stats[op["name"]]["counter"] for op in operators)
+                
+                if total_score > 0 and total_count > 0:
+                    # Calculating new probabilities for each operator
+                    for op in operators:
+                        op_name = op["name"]
+                        counter = max(1, op_stats[op_name]["counter"])
+                        score = op_stats[op_name]["score"]
+                        op_stats[op_name]["probability"] = (score / counter + 0.01) / (total_score / total_count + 0.03 * len(operators))
+                        
+                    # Normalize probabilities to sum to 1
+                    prob_sum = sum(op_stats[op["name"]]["probability"] for op in operators)
+                    if prob_sum > 0:
+                        for op in operators:
+                            op_stats[op["name"]]["probability"] /= prob_sum
+                            if i % 1000 == 0:
+                                print(f"Operator: {op['name']}, Probability: {op_stats[op['name']]['probability']}")
+                
+                history["iterations"].append(i)
+                history["best_costs"].append(best_cost)
+                history["incumbent_costs"].append(incumbent_cost)
+                
+                # Record updated probabilities
                 for op in operators:
                     op_name = op["name"]
-                    counter = max(1, op_stats[op_name]["counter"])
-                    score = op_stats[op_name]["score"]
-                    
-                    # Calculating normalized scores
-                    op_stats[op_name]["probability"] = (score / counter + 0.01) / (total_score / total_count + 0.03 * len(operators))
-                    
-                # Normalize probabilities to sum to 1
-                prob_sum = sum(op_stats[op["name"]]["probability"] for op in operators)
-                if prob_sum > 0:
-                    for op in operators:
-                        op_stats[op["name"]]["probability"] /= prob_sum
-                        if i % 1000 == 0:
-                            print(f"Operator: {op['name']}, Probability: {op_stats[op['name']]['probability']}")
+                    # history["operator_probs"][op_name].append(op_stats[op_name]["probability"])
+                    history["operator_probs"][op_name].append(op_stats[op_name]["probability"])
+                    # Track operator usage count
+                    history["operator_usage"][op_name].append(op_stats[op_name]["counter"])
                 
-            
-            history["iterations"].append(i)
-            history["best_costs"].append(best_cost)
-            history["incumbent_costs"].append(incumbent_cost)
-            
-            # Record updated probabilities
-            for op in operators:
-                op_name = op["name"]
-                # history["operator_probs"][op_name].append(op_stats[op_name]["probability"])
-                history["operator_probs"][op_name].append(op_stats[op_name]["probability"])
-                # Track operator usage count
-                history["operator_usage"][op_name].append(op_stats[op_name]["counter"])
-            
-            # Reset scores and counters for the next segment
-            for op in operators:
-                op_stats[op["name"]]["score"] = 0
-                op_stats[op["name"]]["counter"] = 0
-            
-
-           
-
+                # Reset scores and counters for the next segment
+                for op in operators:
+                    op_stats[op["name"]]["score"] = 0
+                    op_stats[op["name"]]["counter"] = 0
                 
-
+            # Write results to the log file every 1000 iterations
+            if i % 1000 == 0:
+                log_file.write("\n")
+                log_file.write(f"iteration: {i} \nbest_cost: {best_cost} \nincumbent_cost: {incumbent_cost} \nbest_sol: {best_sol} \nop_stats: {op_stats}\n")
+                log_file.flush()  # Ensure data is written to the file immediately
            
     return best_sol, op_stats, history
 

@@ -231,132 +231,132 @@ def initial_solution(problem):
         sol.append(i + 1)
     return sol
 
-def random_function(problem):
-    num_vehicles = problem['n_vehicles']
-    vessel_cargo = problem['VesselCargo']
-    print(vessel_cargo)
-    cargo_volume = problem['Cargo'][:, 2]
-    vessel_capacity = problem['VesselCapacity']
+# def random_function(problem):
+#     num_vehicles = problem['n_vehicles']
+#     vessel_cargo = problem['VesselCargo']
+#     print(vessel_cargo)
+#     cargo_volume = problem['Cargo'][:, 2]
+#     vessel_capacity = problem['VesselCapacity']
     
-    final_route = []
-    dummy_route = []
-    assigned_calls = set()
-    not_assigned_calls = set()
+#     final_route = []
+#     dummy_route = []
+#     assigned_calls = set()
+#     not_assigned_calls = set()
     
-    # INITIAL SOLUTION
-    initial_sol = [0] * num_vehicles #[0,0,0,1,2,3,4,5,6,7]
-    for i in range(problem['n_calls']):
-        initial_sol.append(i+1)
+#     # INITIAL SOLUTION
+#     initial_sol = [0] * num_vehicles #[0,0,0,1,2,3,4,5,6,7]
+#     for i in range(problem['n_calls']):
+#         initial_sol.append(i+1)
     
-    for i in range(num_vehicles):
-        vehicle_route = []
-        calls_for_vehicle = np.where(vessel_cargo[i] == 1)[0] + 1 # JEg må addere med 1 for å få riktig call
-        calls_for_vehicle = calls_for_vehicle[calls_for_vehicle != 0]
-        np.random.shuffle(calls_for_vehicle)
+#     for i in range(num_vehicles):
+#         vehicle_route = []
+#         calls_for_vehicle = np.where(vessel_cargo[i] == 1)[0] + 1 # JEg må addere med 1 for å få riktig call
+#         calls_for_vehicle = calls_for_vehicle[calls_for_vehicle != 0]
+#         np.random.shuffle(calls_for_vehicle)
        
-        current_load = 0
+#         current_load = 0
         
-        # PICKUP
-        for call in calls_for_vehicle:
-            if call not in assigned_calls and current_load + cargo_volume[call-1] <= vessel_capacity[i]:
-                vehicle_route.append(call)
-                current_load += cargo_volume[call-1]
-                assigned_calls.add(call)
-                not_assigned_calls.discard(call)
-            else:
-                not_assigned_calls.add(call)
+#         # PICKUP
+#         for call in calls_for_vehicle:
+#             if call not in assigned_calls and current_load + cargo_volume[call-1] <= vessel_capacity[i]:
+#                 vehicle_route.append(call)
+#                 current_load += cargo_volume[call-1]
+#                 assigned_calls.add(call)
+#                 not_assigned_calls.discard(call)
+#             else:
+#                 not_assigned_calls.add(call)
        
-        # DELIVERY
-        for call in vehicle_route: 
-            if vehicle_route.count(call) == 1:
-                insert_pos = np.random.randint(vehicle_route.index(call) + 1, len(vehicle_route) + 1)
-                vehicle_route.insert(insert_pos, call)
-        final_route.append(vehicle_route)
+#         # DELIVERY
+#         for call in vehicle_route: 
+#             if vehicle_route.count(call) == 1:
+#                 insert_pos = np.random.randint(vehicle_route.index(call) + 1, len(vehicle_route) + 1)
+#                 vehicle_route.insert(insert_pos, call)
+#         final_route.append(vehicle_route)
       
-    result = []
-    route_index = 0
+#     result = []
+#     route_index = 0
     
-    for item in initial_sol:
-        if item == 0 and route_index < len(final_route):
-            result.extend(final_route[route_index])
-            route_index += 1
-            result.append(item)
-        if item not in result:
-            dummy_route.append(item)
+#     for item in initial_sol:
+#         if item == 0 and route_index < len(final_route):
+#             result.extend(final_route[route_index])
+#             route_index += 1
+#             result.append(item)
+#         if item not in result:
+#             dummy_route.append(item)
         
-    # The DUMMY ROUTE
-    for call in dummy_route:
-        if dummy_route.count(call) == 1:
-            insert_pos = np.random.randint(dummy_route.index(call) + 1, len(dummy_route) + 1)
-            dummy_route.insert(insert_pos, call)
-    result.extend(dummy_route)
+#     # The DUMMY ROUTE
+#     for call in dummy_route:
+#         if dummy_route.count(call) == 1:
+#             insert_pos = np.random.randint(dummy_route.index(call) + 1, len(dummy_route) + 1)
+#             dummy_route.insert(insert_pos, call)
+#     result.extend(dummy_route)
     
-    return result
+#     return result
 
-# this should remove one call from the initial solution (both pickup and delivery)
-# then add this call to one of the vehicles
-def n_operator(prob, sol):
-    new_sol = sol.copy()
+# # this should remove one call from the initial solution (both pickup and delivery)
+# # then add this call to one of the vehicles
+# def n_operator(prob, sol):
+#     new_sol = sol.copy()
     
-    # Pick a random non-zero call
-    possible_calls = [x for x in new_sol if x != 0]
-    if not possible_calls:
-        return new_sol
+#     # Pick a random non-zero call
+#     possible_calls = [x for x in new_sol if x != 0]
+#     if not possible_calls:
+#         return new_sol
     
-    call = np.random.choice(possible_calls)
+#     call = np.random.choice(possible_calls)
     
-    # Count zeroes and find which vehicle has our call
-    zero_positions = [i for i, x in enumerate(new_sol) if x == 0]
-    vehicle_ranges = []
+#     # Count zeroes and find which vehicle has our call
+#     zero_positions = [i for i, x in enumerate(new_sol) if x == 0]
+#     vehicle_ranges = []
     
-    # Create ranges for each vehicle
-    start_idx = 0
-    for zero_pos in zero_positions:
-        vehicle_ranges.append((start_idx, zero_pos))
-        start_idx = zero_pos + 1
-    vehicle_ranges.append((start_idx, len(new_sol)))
+#     # Create ranges for each vehicle
+#     start_idx = 0
+#     for zero_pos in zero_positions:
+#         vehicle_ranges.append((start_idx, zero_pos))
+#         start_idx = zero_pos + 1
+#     vehicle_ranges.append((start_idx, len(new_sol)))
     
-    # Find which vehicle has our call
-    current_vehicle = -1
-    for i, (start, end) in enumerate(vehicle_ranges):
-        if call in new_sol[start:end]:
-            current_vehicle = i
-            break
+#     # Find which vehicle has our call
+#     current_vehicle = -1
+#     for i, (start, end) in enumerate(vehicle_ranges):
+#         if call in new_sol[start:end]:
+#             current_vehicle = i
+#             break
     
-    # Remove the call from the solution
-    new_sol = [x for x in new_sol if x != call]
+#     # Remove the call from the solution
+#     new_sol = [x for x in new_sol if x != call]
     
-    # Recalculate cehicle ranges after removal
-    zero_positions = [i for i, x in enumerate(new_sol) if x == 0]
-    vehicle_ranges = []
+#     # Recalculate cehicle ranges after removal
+#     zero_positions = [i for i, x in enumerate(new_sol) if x == 0]
+#     vehicle_ranges = []
     
-    start_idx = 0
-    for zero_pos in zero_positions:
-        vehicle_ranges.append((start_idx, zero_pos))
-        start_idx = zero_pos + 1
-    vehicle_ranges.append((start_idx, len(new_sol)))
+#     start_idx = 0
+#     for zero_pos in zero_positions:
+#         vehicle_ranges.append((start_idx, zero_pos))
+#         start_idx = zero_pos + 1
+#     vehicle_ranges.append((start_idx, len(new_sol)))
     
-    # Choose a different vehicle
-    target_vehicle = current_vehicle
-    while target_vehicle == current_vehicle and len(vehicle_ranges) > 1:
-        target_vehicle = np.random.randint(0, len(vehicle_ranges))
+#     # Choose a different vehicle
+#     target_vehicle = current_vehicle
+#     while target_vehicle == current_vehicle and len(vehicle_ranges) > 1:
+#         target_vehicle = np.random.randint(0, len(vehicle_ranges))
     
-    # Get target vehicle range
-    start, end = vehicle_ranges[target_vehicle]
+#     # Get target vehicle range
+#     start, end = vehicle_ranges[target_vehicle]
     
-    # Insert pickup
-    pickup_pos = np.random.randint(start, end + 1)
-    new_sol.insert(pickup_pos, call)
+#     # Insert pickup
+#     pickup_pos = np.random.randint(start, end + 1)
+#     new_sol.insert(pickup_pos, call)
     
-    # Insert delivery
-    if pickup_pos < end:
-        delivery_pos = np.random.randint(pickup_pos + 1, end + 1)
-    else:
-        delivery_pos = pickup_pos + 1
+#     # Insert delivery
+#     if pickup_pos < end:
+#         delivery_pos = np.random.randint(pickup_pos + 1, end + 1)
+#     else:
+#         delivery_pos = pickup_pos + 1
         
-    new_sol.insert(delivery_pos, call)
+#     new_sol.insert(delivery_pos, call)
     
-    return new_sol
+#     return new_sol
     
     
     
@@ -439,81 +439,81 @@ def n_operator(prob, sol):
     
     # return new_sol
 
-def local_search(problem, initial_sol):
-    best_sol = initial_sol
-    best_cost = cost_function(best_sol, problem)
+# def local_search(problem, initial_sol):
+#     best_sol = initial_sol
+#     best_cost = cost_function(best_sol, problem)
 
     
-    for i in range(1000):
-        new_sol = n_operator(problem, best_sol)
-        feasibility, c = feasibility_check(new_sol, problem)
-        new_cost = cost_function(new_sol, problem)
-        if feasibility and new_cost < best_cost:
-            best_sol = new_sol
-            best_cost = new_cost
+#     for i in range(1000):
+#         new_sol = n_operator(problem, best_sol)
+#         feasibility, c = feasibility_check(new_sol, problem)
+#         new_cost = cost_function(new_sol, problem)
+#         if feasibility and new_cost < best_cost:
+#             best_sol = new_sol
+#             best_cost = new_cost
     
-    return best_sol
+#     return best_sol
 
-def simulated_annealing(problem, initial_sol):
-    best_sol = initial_sol 
-    incumbent = initial_sol
-    T_f = 0.1
-    delta_w = []
-    incumbent_cost = cost_function(incumbent, problem)
-    best_cost = incumbent_cost
+# def simulated_annealing(problem, initial_sol):
+#     best_sol = initial_sol 
+#     incumbent = initial_sol
+#     T_f = 0.1
+#     delta_w = []
+#     incumbent_cost = cost_function(incumbent, problem)
+#     best_cost = incumbent_cost
     
-    for w in range(1, 100):
-        new_sol = n_operator(problem, incumbent)
-        feasibility, _ = feasibility_check(new_sol, problem)
-        c = cost_function(new_sol, problem)
-        delta_E = c - incumbent_cost
+#     for w in range(1, 100):
+#         new_sol = n_operator(problem, incumbent)
+#         feasibility, _ = feasibility_check(new_sol, problem)
+#         c = cost_function(new_sol, problem)
+#         delta_E = c - incumbent_cost
         
-        if feasibility and delta_E < 0:
-            incumbent = new_sol
-            incumbent_cost = c
-            if incumbent_cost < best_cost:
-                best_sol = incumbent
-                best_cost = incumbent_cost
-        elif feasibility:
-            if random.random() < 0.8:
-                incumbent = new_sol
-                incumbent_cost = c
-            delta_w.append(delta_E)
+#         if feasibility and delta_E < 0:
+#             incumbent = new_sol
+#             incumbent_cost = c
+#             if incumbent_cost < best_cost:
+#                 best_sol = incumbent
+#                 best_cost = incumbent_cost
+#         elif feasibility:
+#             if random.random() < 0.8:
+#                 incumbent = new_sol
+#                 incumbent_cost = c
+#             delta_w.append(delta_E)
         
-    delta_avg = np.mean(delta_w)
-    print(f"delta_avg: {delta_avg}")
-    
-
-        
-    T_0 = -delta_avg / math.log(0.8)
-    print(f"T_0: {T_0}")
+#     delta_avg = np.mean(delta_w)
+#     print(f"delta_avg: {delta_avg}")
     
 
-    alpha = (T_f / T_0) ** (1/9900)
-    T = T_0
-    
-    for i in range(1, 9900):
-        new_sol = n_operator(problem, incumbent)
-        c = cost_function(new_sol, problem)
-        feasibility, _ = feasibility_check(new_sol, problem)
-        delta_E = c - incumbent_cost
         
-        if i % 1000 == 0:
-            print(f"Vi er her: {i}")
+#     T_0 = -delta_avg / math.log(0.8)
+#     print(f"T_0: {T_0}")
+    
+
+#     alpha = (T_f / T_0) ** (1/9900)
+#     T = T_0
+    
+#     for i in range(1, 9900):
+#         new_sol = n_operator(problem, incumbent)
+#         c = cost_function(new_sol, problem)
+#         feasibility, _ = feasibility_check(new_sol, problem)
+#         delta_E = c - incumbent_cost
+        
+#         if i % 1000 == 0:
+#             print(f"Vi er her: {i}")
            
-        if feasibility and delta_E < 0:
-            incumbent = new_sol
-            incumbent_cost = c
-            if incumbent_cost < best_cost:
-                best_sol = incumbent
-                best_cost = incumbent_cost
-        elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
-            incumbent = new_sol
-            incumbent_cost = c
+#         if feasibility and delta_E < 0:
+#             incumbent = new_sol
+#             incumbent_cost = c
+#             if incumbent_cost < best_cost:
+#                 best_sol = incumbent
+#                 best_cost = incumbent_cost
+#         elif feasibility and (random.random() < (math.exp((-1) * delta_E / T))):
+#             incumbent = new_sol
+#             incumbent_cost = c
         
-        T = alpha * T
+#         T = alpha * T
         
-    return best_sol
+#     return best_sol
         
     
     
